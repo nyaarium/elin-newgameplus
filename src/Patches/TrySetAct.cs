@@ -7,33 +7,70 @@ namespace NewGamePlus;
 internal static class TrySetAct_Patch
 {
 	[HarmonyPrefix]
-	public static void Postfix(TraitCoreZone __instance, ActPlan p)
+	public static void Prefix(TraitCoreZone __instance, ActPlan p)
 	{
-		//IL_00d5: Unknown result type (might be due to invalid IL or missing references)
-		//IL_00da: Unknown result type (might be due to invalid IL or missing references)
-		//IL_00e1: Unknown result type (might be due to invalid IL or missing references)
-		//IL_00e8: Unknown result type (might be due to invalid IL or missing references)
-		//IL_00ef: Unknown result type (might be due to invalid IL or missing references)
-		//IL_00f6: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0107: Unknown result type (might be due to invalid IL or missing references)
-		//IL_012d: Expected O, but got Unknown
-		if (NewGamePlus.showCfgButtonInGame.Value && EClass._zone.IsPCFaction && ((Trait)__instance).owner.IsInstalled)
+		if (ModConfig.GetOption("showCfgButtonInGame")?.Value == true && EClass._zone.IsPCFaction && ((Trait)__instance).owner.IsInstalled)
 		{
-			string text = ((EClass.core.config.lang == "CN") ? "导出当前存档" : ((EClass.core.config.lang == "ZHTW") ? "導出當前存檔" : ((!(EClass.core.config.lang == "JP")) ? "Export Current Save" : "現在の保存をエクスポート")));
-			Act val = (Act)new DynamicAct(text, (Func<bool>)delegate
+			if (ModConfig.GetOption("showDebugOptions")?.Value == true)
 			{
-				NewGamePlus.ExportBio(EClass.pc);
+				string debugText = ModLocalization.Get(ModLocalization.DebugInventorySlots);
+
+				Func<bool> debugExportAction = () =>
+				{
+					SlotTester.TestSlots(EClass.pc);
+					return false;
+				};
+
+				Act debugAct = (Act)new DynamicAct(debugText, debugExportAction, false)
+				{
+					id = debugText,
+					dist = 1,
+					isHostileAct = false,
+					localAct = true,
+					cursor = ((CursorSystem.Arrow == null) ? null : null),
+					canRepeat = () => false
+				};
+				p.TrySetAct(debugAct, (Card)null);
+
+				string debugImportText = ModLocalization.Get(ModLocalization.DebugImport);
+
+				Func<bool> debugImportAction = () =>
+				{
+					NewGamePlus.DebugImportTest(EClass.pc);
+					return false;
+				};
+
+				Act debugImportAct = (Act)new DynamicAct(debugImportText, debugImportAction, false)
+				{
+					id = debugImportText,
+					dist = 1,
+					isHostileAct = false,
+					localAct = true,
+					cursor = ((CursorSystem.Arrow == null) ? null : null),
+					canRepeat = () => false
+				};
+				p.TrySetAct(debugImportAct, (Card)null);
+			}
+
+			string exportText = ModLocalization.Get(ModLocalization.ExportCurrentSave);
+
+			Func<bool> exportAction = () =>
+			{
+				NewGamePlus.ExportCharacter(EClass.pc);
 				return false;
-			}, false)
+			};
+
+			Act exportAct = (Act)new DynamicAct(exportText, exportAction, false)
 			{
-				id = text,
+				id = exportText,
 				dist = 1,
 				isHostileAct = false,
 				localAct = true,
 				cursor = ((CursorSystem.Arrow == null) ? null : null),
 				canRepeat = () => false
 			};
-			p.TrySetAct(val, (Card)null);
+
+			p.TrySetAct(exportAct, (Card)null);
 		}
 	}
 }

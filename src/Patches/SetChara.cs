@@ -5,10 +5,10 @@ namespace NewGamePlus;
 [HarmonyPatch(typeof(UICharaMaker), "SetChara")]
 internal static class SetChara_Patch
 {
-	[HarmonyPostfix]
-	public static bool Prefix(UICharaMaker __instance, Chara c)
+	[HarmonyPrefix]
+	public static void Prefix(UICharaMaker __instance, Chara c)
 	{
+		// Import BEFORE SetChara runs, so Refresh() will see the imported data
 		NewGamePlus.ImportBio(c);
-		return true;
 	}
 }
