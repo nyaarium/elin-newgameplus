@@ -1,0 +1,45 @@
+---
+alwaysApply: true
+---
+
+# Elin Disassembly Documentation
+
+Local Path: `./Elin-Decompiled-main/`
+
+If it is missing, download as a ZIP `https://github.com/Elin-Modding-Resources/Elin-Decompiled/archive/refs/heads/main.zip` and extract to put the repo in: `./Elin-Decompiled-main/`.
+
+## File Patterns
+
+**Class documentation:** `class{ClassName}.html`
+- Example: `classCard.html`, `classChara.html`
+- Shows: public methods, properties, inheritance
+
+**Source code:** `{ClassName}_8cs_source.html`
+- Example: `Card_8cs_source.html`, `Game_8cs_source.html`
+- Use line numbers in grep results to find specific sections
+
+**Nested classes:** `class{OuterClass}_1_1{InnerClass}.html`
+- Example: `classGameSetting_1_1StartSetting.html`
+- `_1_1` indicates nested class
+
+## Important: Use Grep, Not Direct Reads
+
+**Never attempt to read these HTML files directly** - they are too large and will explode context. Do not use `read_file` on HTML files from this directory.
+
+1. **Use targeted greps**: Use the `grep` tool to search for specific patterns in the local files
+   - Example: Use `grep` tool with pattern `"public.*MethodName"`, path `Elin-Decompiled-main/classCard.html`, and case-insensitive flag
+2. **Search by file type**: Use `glob_file_search` to find files by pattern
+   - Example: `glob_file_search` with pattern `"*Chara*.html"` in `Elin-Decompiled-main/`
+3. **Avoid reading entire files**: Only read specific sections if grep doesn't find what you need and you must see the exact context
+
+## Usage
+
+1. **Search locally**: All files are in `./Elin-Decompiled-main/` - no downloading needed
+2. **Use the `grep` tool** to search for specific patterns (method names, properties, etc.) in the local HTML files
+3. **Use `glob_file_search`** to find files by name pattern
+
+## Notes
+
+- Generated from `Elin.dll` using dnSpy and Doxygen
+- Some names may be compiler-generated or obfuscated
+- Properties showing `[get]` only may still have mutable underlying values
