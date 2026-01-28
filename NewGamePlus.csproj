@@ -1,0 +1,83 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>NewGamePlus</AssemblyName>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+
+    <!-- Set this to your Elin install path -->
+    <ELIN_INSTALL_PATH>S:\Steam\steamapps\common\Elin</ELIN_INSTALL_PATH>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Elin-Decompiled-main/**" />
+    <None Include="Elin-Decompiled-main/**" />
+  </ItemGroup>
+
+  <Target Name="ResolveReferences" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <LibFiles Include="$(ELIN_INSTALL_PATH)\BepInEx\core\BepInEx.Core.dll" />
+      <LibFiles Include="$(ELIN_INSTALL_PATH)\BepInEx\core\BepInEx.Unity.dll" />
+      <LibFiles Include="$(ELIN_INSTALL_PATH)\BepInEx\core\0Harmony.dll" />
+      <LibFiles Include="$(ELIN_INSTALL_PATH)\Elin_Data\Managed\Elin.dll" />
+      <LibFiles Include="$(ELIN_INSTALL_PATH)\Elin_Data\Managed\Plugins.BaseCore.dll" />
+      <LibFiles Include="$(ELIN_INSTALL_PATH)\Elin_Data\Managed\Plugins.UI.dll" />
+      <LibFiles Include="$(ELIN_INSTALL_PATH)\Elin_Data\Managed\UnityEngine.dll" />
+      <LibFiles Include="$(ELIN_INSTALL_PATH)\Elin_Data\Managed\UnityEngine.CoreModule.dll" />
+      <LibFiles Include="$(ELIN_INSTALL_PATH)\Elin_Data\Managed\UnityEngine.UI.dll" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <None Include="NewGamePlusConfig.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BepInEx.Core">
+      <HintPath>$(ELIN_INSTALL_PATH)\BepInEx\core\BepInEx.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="BepInEx.Unity">
+      <HintPath>$(ELIN_INSTALL_PATH)\BepInEx\core\BepInEx.Unity.dll</HintPath>
+    </Reference>
+    <Reference Include="Elin">
+      <HintPath>$(ELIN_INSTALL_PATH)\Elin_Data\Managed\Elin.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="0Harmony">
+      <HintPath>$(ELIN_INSTALL_PATH)\BepInEx\core\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="Plugins.BaseCore">
+      <HintPath>$(ELIN_INSTALL_PATH)\Elin_Data\Managed\Plugins.BaseCore.dll</HintPath>
+    </Reference>
+    <Reference Include="Plugins.UI">
+      <HintPath>$(ELIN_INSTALL_PATH)\Elin_Data\Managed\Plugins.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ELIN_INSTALL_PATH)\Elin_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ELIN_INSTALL_PATH)\Elin_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(ELIN_INSTALL_PATH)\Elin_Data\Managed\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="ModOptions">
+      <HintPath>$(ProjectDir)Libs\Plugins\ModOptions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="CopyToPackage" AfterTargets="Build">
+    <PropertyGroup>
+      <PackageDir>S:\Steam\steamapps\common\Elin\Package\NewGamePlus\</PackageDir>
+    </PropertyGroup>
+    <Copy Condition="Exists('$(PackageDir)')" SourceFiles="$(TargetPath)" DestinationFolder="$(PackageDir)" SkipUnchangedFiles="true" />
+    <Copy Condition="Exists('$(PackageDir)')" SourceFiles="$(ProjectDir)NewGamePlusConfig.xml" DestinationFolder="$(PackageDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>
