@@ -7,6 +7,103 @@
   <loadPriority>100</loadPriority>
   <version>1.0.0</version>
   <description>
-    TODO
+    [h2]New Game++[/h2]
+
+    This mod lets you export your character and import it into a new game, as a new game+ character.
+
+    Now requires: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3381182341]Mod Options[/url]
+
+    [i][url=https://github.com/nyaarium/elin-newgameplus]GitHub Repo[/url][/i]
+
+    [h2]Game updated? Found a bug?[/h2]
+
+    [url=https://github.com/nyaarium/elin-newgameplus/issues?q=is%3Aissue]File an issue on the Issues tab[/url] with [b]what the problem is[/b]. (I work with GitHub repos every day, so I will notice if you file properly)
+
+    If you just comment on Steam, I may not notice (I'm not even logged in most of the time).
+
+    [h2]Credits[/h2]
+
+    [b]Original Mod:[/b] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3373526993]New Game+[/url]
+
+    [list]
+    [*][b]EN:[/b] This is a revival and feature extension of the above mod. Unsubscribe from the original when switching to this version.
+    [*][b]JP:[/b] このmodは上記のmodを復活して機能を追加して更新しました。本バージョンをサブスク登録した際に元バージョンのサブスクを解除してください。
+    [*][b]CN:[/b] 这是上述模组的复兴和功能扩展版本。切换到本版本时，请取消订阅原模组。
+    [/list]
+
+    Credits again to the original author for creating the original mod. This mod has changed quite significantly, so I don't think anyone minds me publishing a fork.
+
+    [h2]How to Use[/h2]
+
+    [olist]
+    [*]Middle-click your heart stone in your old save to export it.
+    [*]Visit the Mod Options if you want to customize what's imported.
+    [*]Start a new game. Your appearance will be restored. Change as desired. You can also change your race/class.
+    [*]Continue until you see the game world. Your stats will restore, and items spawn.
+    [/olist]
+
+    [h2]What will carry over to a new start?[/h2]
+
+    [b]Always included:[/b]
+
+    [list]
+    [*]Biography or Profile, including name and nickname (except favorite, hobby, and work. [i]You can use a whip on yourself to change hobby and work anyway.[/i])
+    [*]Portrait (but you need to re-slide your PCC)
+    [*]Race and Class, unless you re-roll it in character creation (Warmage will need to re-choose domain)
+    [*]Level, feats
+    [*]Counters for little dead and saved
+    [*]Known BGMs (Tapes)
+    [*]Sketches (Drawings)
+    [*]Key Items: Fragrance of Goddess, Black Cat's Saliva, Feather Shard of Goddess, and Lucky Coin (you will need to go buy the license again)
+    [/list]
+
+    [b]Configuable in Mod Options:[/b]
+
+    [list]
+    [*]Include Toolbar
+    [*]Include Worn Equipment
+    [*]Include Inventory and Container Contents (properties SHOULD carry over, but let me know if something is not)
+    [*]Include Bank
+    [*]Include Player Level
+    [*]Include Acquired Feats (unchecking will refund the points)
+    [*]Include Abilities
+    [*]Include Skills
+    [*]Include Faith
+    [*]Include Karma
+    [*]Include Fame
+    [*]Include Craft Recipes
+    [*]Cure Ether Diseases
+    [*]Cure Mutations
+    [/list]
+
+    [h2]What won't carry over to a new start?[/h2]
+
+    [list]
+    [*]Any exceptions mentioned above
+    [*]『Unique Names』on legendary/mythical items (these are randomly generated based on item UID and game seed, which changes on a new run)
+    [*]Home level, home policy, home skills, or home feats
+    [*]Influence on NPC zones
+    [*]Companions
+    [*]Buildings
+    [*]Guild experience
+    [*]Paid debt
+    [/list]
+
+    [h2]Updates[/h2]
+
+    Bugs Fixes and Rewrites:
+
+    [list]
+    [*]Fixed an exception because the mod was referencing an old field "qualityTier". [i](I think it was renamed to "tier" at some point)[/i]
+    [*]Included as much item properties as possible [i](material, color, etc.)[/i]
+    [*]Fixed some stat calculation issues
+    [*]Added support for Mod Options configuration UI.
+    [*]Switched character dumper to JSON for structure and maintainability.
+    [*]Character stats now properly export and restore, including temporary stat modifiers, conditions, mutations, corruption history. [i](configurable in Mod Options)[/i]
+    [*]Items are now organized by category [i](toolbar, equipment, backpack contents)[/i] and configurable in Mod Options.
+    [*]Items start on your character instead of spilling onto the ground.
+    [*]Added config options to control whether healing and disease curing occur during import.
+    [*]Thanks to AI Agent [i](Cursor Code)[/i] for refactor help, rough translations, and reverse-engineering decompiled code/docs totaling [b]240000+ lines[/b]
+    [/list]
   </description>
 </Meta>
