@@ -40,6 +40,7 @@ Credits again to the original author for creating the original mod. This mod has
 - Counters for little dead and saved
 - Known BGMs (Tapes)
 - Sketches (Drawings)
+- Card codex (creatures discovered, kills, weakspots, drop bonus)
 - Key Items: Fragrance of Goddess, Black Cat's Saliva, Feather Shard of Goddess, and Lucky Coin (you will need to go buy the license again)
 
 **Configuable in Mod Options:**
@@ -56,6 +57,7 @@ Credits again to the original author for creating the original mod. This mod has
 - Include Karma
 - Include Fame (note: tax is based on fame; importing fame will make your first tax bill high)
 - Include Craft Recipes
+- Include Codex
 - Cure Ether Diseases
 - Cure Mutations
 

@@ -251,6 +251,28 @@ public static class ModLocalization
 		},
 		new UIOption
 		{
+			ConfigKey = "includeCodex",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include creature codex",
+			ToggleId = "importIncludeCodexToggle",
+			LabelKey = "ImportIncludeCodex",
+			TooltipKey = "ImportIncludeCodexTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Codex" },
+				{ "JP", "図鑑を含める" },
+				{ "CN", "包含图鉴" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include creature codex" },
+				{ "JP", "図鑑を含めます" },
+				{ "CN", "包含图鉴" }
+			}
+		},
+		new UIOption
+		{
 			ConfigKey = "includeBank",
 			ConfigSection = "import",
 			DefaultValue = true,
