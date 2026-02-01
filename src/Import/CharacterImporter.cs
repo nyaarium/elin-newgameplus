@@ -127,6 +127,15 @@ public static class CharacterImporter
 			EClass.player.codex.OnLoad();
 		}
 
+		if (ModConfig.GetOption("includeInfluence")?.Value == true && dumpData.zoneInfluence != null && dumpData.zoneInfluence.Count > 0 && EClass.game?.spatials?.Zones != null)
+		{
+			foreach (Zone zone in EClass.game.spatials.Zones)
+			{
+				if (dumpData.zoneInfluence.TryGetValue(zone.id, out int influence))
+					zone.influence = influence;
+			}
+		}
+
 		if (ModConfig.GetOption("includeKarma")?.Value == true && dumpData.playerKarma != 0)
 		{
 			EClass.player.karma = dumpData.playerKarma;

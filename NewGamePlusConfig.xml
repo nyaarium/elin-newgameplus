@@ -49,9 +49,17 @@
                 <contentId>ImportIncludeFame</contentId>
                 <tooltip>ImportIncludeFameTooltip</tooltip>
             </toggle>
+            <toggle id="importIncludeInfluenceToggle">
+                <contentId>ImportIncludeInfluence</contentId>
+                <tooltip>ImportIncludeInfluenceTooltip</tooltip>
+            </toggle>
             <toggle id="importIncludeCraftRecipesToggle">
                 <contentId>ImportIncludeCraftRecipes</contentId>
                 <tooltip>ImportIncludeCraftRecipesTooltip</tooltip>
+            </toggle>
+            <toggle id="importIncludeCodexToggle">
+                <contentId>ImportIncludeCodex</contentId>
+                <tooltip>ImportIncludeCodexTooltip</tooltip>
             </toggle>
             <toggle id="importCureDiseasesToggle">
                 <contentId>ImportCureDiseases</contentId>

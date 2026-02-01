@@ -111,6 +111,7 @@ public class CharacterDumpData
 	[DataMember] public List<int> playerKnownCraft { get; set; }
 	[DataMember] public List<RecipeData> playerKnownRecipe { get; set; }
 	[DataMember] public List<CodexCreatureData> playerCodex { get; set; }
+	[DataMember] public Dictionary<string, int> zoneInfluence { get; set; }
 	[DataMember] public int playerDeepest { get; set; }
 	[DataMember] public List<ElementData> charaElements { get; set; }
 	[DataMember] public List<int> charaBodyParts { get; set; }  // Element IDs directly, not Japanese strings

@@ -55,9 +55,10 @@ Credits again to the original author for creating the original mod. This mod has
 - Include Skills
 - Include Faith
 - Include Karma
-- Include Fame (note: tax is based on fame; importing fame will make your first tax bill high)
+- Include Fame (tax is based on fame. importing fame will start you with high taxes)
 - Include Craft Recipes
 - Include Codex
+- Include Influence
 - Cure Ether Diseases
 - Cure Mutations
 
@@ -66,7 +67,6 @@ Credits again to the original author for creating the original mod. This mod has
 - Any exceptions mentioned above
 - 『Unique Names』on legendary/mythical items (these are randomly generated based on item UID and game seed, which changes on a new run)
 - Home level, home policy, home skills, or home feats
-- Influence on NPC zones
 - Companions
 - Buildings
 - Guild experience

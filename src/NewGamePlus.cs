@@ -58,6 +58,7 @@ public class NewGamePlus : BaseUnityPlugin
 			playerKnownCraft = EClass.player.knownCraft.ToList(),
 			playerKnownRecipe = EClass.player.recipes.knownRecipes.Select(kv => new RecipeData { id = kv.Key, count = kv.Value }).ToList(),
 			playerCodex = ExportCodex(),
+			zoneInfluence = ExportZoneInfluence(),
 			playerDeepest = EClass.player.stats.deepest,
 			charaElements = ThingUtils.ExportElementConfig((Card)(object)c),
 			charaBodyParts = CharacterExporter.ExportBodyParts(c.body.slots),
@@ -109,6 +110,16 @@ public class NewGamePlus : BaseUnityPlugin
 			list.Add(new CodexCreatureData { id = kv.Key, ints = (int[])kv.Value._ints.Clone() });
 		}
 		return list;
+	}
+
+	private static Dictionary<string, int> ExportZoneInfluence()
+	{
+		if (EClass.game?.spatials?.Zones == null || EClass.game.spatials.Zones.Count == 0)
+			return null;
+		var dict = new Dictionary<string, int>();
+		foreach (Zone zone in EClass.game.spatials.Zones)
+			dict[zone.id] = zone.influence;
+		return dict;
 	}
 
 	public static void DebugInventorySlotsTest(Chara c)
