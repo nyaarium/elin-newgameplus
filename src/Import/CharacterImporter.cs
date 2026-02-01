@@ -114,6 +114,28 @@ public static class CharacterImporter
 			ImportRecipeConfig(dumpData.playerKnownRecipe);
 		}
 
+		if (ModConfig.GetOption("includeCodex")?.Value == true && dumpData.playerCodex != null && dumpData.playerCodex.Count > 0)
+		{
+			EClass.player.codex.creatures.Clear();
+			foreach (CodexCreatureData entry in dumpData.playerCodex)
+			{
+				if (entry.ints == null || !EClass.sources.charas.map.ContainsKey(entry.id))
+					continue;
+				var creature = new CodexCreature { id = entry.id, _ints = (int[])entry.ints.Clone() };
+				EClass.player.codex.creatures[entry.id] = creature;
+			}
+			EClass.player.codex.OnLoad();
+		}
+
+		if (ModConfig.GetOption("includeInfluence")?.Value == true && dumpData.zoneInfluence != null && dumpData.zoneInfluence.Count > 0 && EClass.game?.spatials?.Zones != null)
+		{
+			foreach (Zone zone in EClass.game.spatials.Zones)
+			{
+				if (dumpData.zoneInfluence.TryGetValue(zone.id, out int influence))
+					zone.influence = influence;
+			}
+		}
+
 		if (ModConfig.GetOption("includeKarma")?.Value == true && dumpData.playerKarma != 0)
 		{
 			EClass.player.karma = dumpData.playerKarma;

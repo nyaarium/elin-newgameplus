@@ -251,6 +251,28 @@ public static class ModLocalization
 		},
 		new UIOption
 		{
+			ConfigKey = "includeCodex",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include creature codex",
+			ToggleId = "importIncludeCodexToggle",
+			LabelKey = "ImportIncludeCodex",
+			TooltipKey = "ImportIncludeCodexTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Codex" },
+				{ "JP", "図鑑を含める" },
+				{ "CN", "包含图鉴" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include creature codex" },
+				{ "JP", "図鑑を含めます" },
+				{ "CN", "包含图鉴" }
+			}
+		},
+		new UIOption
+		{
 			ConfigKey = "includeBank",
 			ConfigSection = "import",
 			DefaultValue = true,
@@ -341,7 +363,7 @@ public static class ModLocalization
 		{
 			ConfigKey = "includeFame",
 			ConfigSection = "import",
-			DefaultValue = true,
+			DefaultValue = false,
 			Description = "Include your fame when importing",
 			ToggleId = "importIncludeFameToggle",
 			LabelKey = "ImportIncludeFame",
@@ -354,9 +376,31 @@ public static class ModLocalization
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
-				{ "EN", "Includes your fame. Tax is based on fame. Importing fame will make your first tax bill high." },
-				{ "JP", "あなたの名声を含めます。税は名声に基づくため、名声をインポートすると最初の税額が高くなります。" },
-				{ "CN", "包含您的声望。税基于声望。导入声望会使您的第一笔税款变高。" }
+				{ "EN", "Includes your fame. Tax is based on fame. Importing fame will start you with high taxes." },
+				{ "JP", "あなたの名声を含めます。税は名声に基づくため、名声をインポートするとはじめから高い税額になります。" },
+				{ "CN", "包含您的声望。税基于声望。导入声望会使您一开始就面临高额税款。" }
+			}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeInfluence",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Includes influence.",
+			ToggleId = "importIncludeInfluenceToggle",
+			LabelKey = "ImportIncludeInfluence",
+			TooltipKey = "ImportIncludeInfluenceTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Influence" },
+				{ "JP", "影響力を含める" },
+				{ "CN", "包含影响力" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Includes influence." },
+				{ "JP", "影響力を含めます。" },
+				{ "CN", "包含影响力。" }
 			}
 		},
 		new UIOption

@@ -30,6 +30,13 @@ public class ThingData
 }
 
 [DataContract]
+public class CodexCreatureData
+{
+	[DataMember] public string id { get; set; }
+	[DataMember] public int[] ints { get; set; }  // CodexCreature._ints, always length 5
+}
+
+[DataContract]
 public class RecipeData
 {
 	[DataMember] public string id { get; set; }
@@ -103,6 +110,8 @@ public class CharacterDumpData
 	[DataMember] public List<int> playerSketches { get; set; }
 	[DataMember] public List<int> playerKnownCraft { get; set; }
 	[DataMember] public List<RecipeData> playerKnownRecipe { get; set; }
+	[DataMember] public List<CodexCreatureData> playerCodex { get; set; }
+	[DataMember] public Dictionary<string, int> zoneInfluence { get; set; }
 	[DataMember] public int playerDeepest { get; set; }
 	[DataMember] public List<ElementData> charaElements { get; set; }
 	[DataMember] public List<int> charaBodyParts { get; set; }  // Element IDs directly, not Japanese strings
