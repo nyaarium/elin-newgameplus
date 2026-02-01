@@ -348,15 +348,15 @@ public static class ModLocalization
 			TooltipKey = "ImportIncludeFameTooltip",
 			LabelTranslations = new Dictionary<string, string>
 			{
-				{ "EN", "Include Fame" },
-				{ "JP", "名声を含める" },
-				{ "CN", "包含声望" }
+				{ "EN", "Includes your fame (Warning: your tax will start high)" },
+				{ "JP", "名声を含める（注意：税が高く始まります）" },
+				{ "CN", "包含声望（注意：税款会从较高开始）" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
-				{ "EN", "Includes your fame" },
-				{ "JP", "あなたの名声を含めます" },
-				{ "CN", "包含您的声望" }
+				{ "EN", "Includes your fame. Tax is based on fame. Importing fame will make your first tax bill high." },
+				{ "JP", "あなたの名声を含めます。税は名声に基づくため、名声をインポートすると最初の税額が高くなります。" },
+				{ "CN", "包含您的声望。税基于声望。导入声望会使您的第一笔税款变高。" }
 			}
 		},
 		new UIOption

@@ -17,7 +17,7 @@ If you just comment on Steam, I may not notice (I'm not even logged in most of t
 **Original Mod:** [New Game+](https://steamcommunity.com/sharedfiles/filedetails/?id=3373526993)
 
 - **EN:** This is a revival and feature extension of the above mod. Unsubscribe from the original when switching to this version.
-- **JP:** このmodは上記のmodを復活して機能を追加して更新しました。本バージョンをサブスク登録した際に元バージョンのサブスクを解除してください。
+- **JP:** この mod は上記の mod を復活して機能を追加して更新しました。本バージョンをサブスク登録した際に元バージョンのサブスクを解除してください。
 - **CN:** 这是上述模组的复兴和功能扩展版本。切换到本版本时，请取消订阅原模组。
 
 Credits again to the original author for creating the original mod. This mod has changed quite significantly, so I don't think anyone minds me publishing a fork.
@@ -54,7 +54,7 @@ Credits again to the original author for creating the original mod. This mod has
 - Include Skills
 - Include Faith
 - Include Karma
-- Include Fame
+- Include Fame (note: tax is based on fame; importing fame will make your first tax bill high)
 - Include Craft Recipes
 - Cure Ether Diseases
 - Cure Mutations

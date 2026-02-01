@@ -470,14 +470,17 @@ public static class CharacterImporter
 			}
 		}
 
-		// 1. Toolbar items (if importIncludeToolbar enabled)
-		if (ModConfig.GetOption("includeToolbar")?.Value == true && dumpData.toolbarItems != null && dumpData.toolbarItems.Count > 0)
+		// 1. Toolbar items (if importIncludeToolbar enabled). Empty slots null
+		if (ModConfig.GetOption("includeToolbar")?.Value == true && dumpData.toolbarItems != null)
 		{
-			for (int i = 0; i < dumpData.toolbarItems.Count && i < ItemSlotManager.ToolbarSlotCount; i++)
+			int n = System.Math.Min(dumpData.toolbarItems.Count, ItemSlotManager.ToolbarSlotCount);
+			for (int i = 0; i < n; i++)
 			{
+				ThingData item = dumpData.toolbarItems[i];
+				if (item == null) continue;
 				try
 				{
-					StorageFixed.SpawnToToolbar(c, dumpData.toolbarItems[i], i);
+					StorageFixed.SpawnToToolbar(c, item, i);
 				}
 				catch (System.Exception)
 				{
