@@ -20,7 +20,7 @@ public static class SlotTester
 			return;
 		}
 
-		// 1. Fill toolbar with 9 amber
+		// 1. Fill toolbar (both bars) with amber
 		for (int x = 0; x < ItemSlotManager.ToolbarSlotCount; x++)
 		{
 			Card card = (Card)ThingGen.Create("throw_putit");

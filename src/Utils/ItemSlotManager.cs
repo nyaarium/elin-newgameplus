@@ -42,8 +42,8 @@ public static class ItemSlotManager
 		public const string AccessoryContainer = "toolbelt";  // The 5-slot container
 	}
 
-	// Slot counts
-	public const int ToolbarSlotCount = 9;
+	// Slot counts (game has 2 hotbar pages × 10 slots = 20)
+	public const int ToolbarSlotCount = 20;
 	public const int AccessorySlotCount = 5;
 	public const int PlayerInventoryMaxSlots = 35; // Player's main inventory has 35 slots (0-34)
 
@@ -305,8 +305,8 @@ public static class StorageAuto
 // Handles storage that requires explicit slot specification - strict bounds checking
 public static class StorageFixed
 {
-	// Insert item into toolbar at normalized slot (0-8)
-	// Throws ArgumentOutOfRangeException if slot >= 9
+	// Insert item into toolbar at normalized slot (0-19, both hotbar pages)
+	// Throws ArgumentOutOfRangeException if slot >= 20
 	// Returns the slot if successful, throws if failed
 	public static int InsertToToolbar(Chara c, Thing item, int normalizedSlot)
 	{
@@ -382,8 +382,8 @@ public static class StorageFixed
 		return slot.index;
 	}
 
-	// Spawn item to toolbar from ThingData descriptor at normalized slot (0-8)
-	// Throws ArgumentOutOfRangeException if slot >= 9
+	// Spawn item to toolbar from ThingData descriptor at normalized slot (0-19)
+	// Throws ArgumentOutOfRangeException if slot >= 20
 	// Returns the slot if successful, throws if failed
 	public static int SpawnToToolbar(Chara c, ThingData descriptor, int normalizedSlot)
 	{

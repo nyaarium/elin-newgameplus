@@ -32,6 +32,11 @@ public static class CharacterExporter
 	public static ItemExportResult ExportAllItems(Chara c)
 	{
 		ItemExportResult result = new ItemExportResult();
+		for (int i = 0; i < ItemSlotManager.ToolbarSlotCount; i++)
+		{
+			result.toolbarItems.Add(null);
+		}
+
 		Card charaCard = (Card)c;
 
 		// Step 1: Build equipped item map from body.slots
@@ -103,7 +108,9 @@ public static class CharacterExporter
 					break;
 
 				case ItemLocation.Toolbar:
-					result.toolbarItems.Add(thingData);
+					int slot = t.invX;
+					if (slot >= 0 && slot < ItemSlotManager.ToolbarSlotCount)
+						result.toolbarItems[slot] = thingData;
 					break;
 
 				case ItemLocation.Toolbelt:
