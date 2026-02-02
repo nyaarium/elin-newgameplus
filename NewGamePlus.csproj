@@ -37,6 +37,9 @@
     <None Include="package.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="preview.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -83,5 +86,6 @@
     <Copy Condition="Exists('$(PackageDir)')" SourceFiles="$(TargetPath)" DestinationFolder="$(PackageDir)" SkipUnchangedFiles="true" />
     <Copy Condition="Exists('$(PackageDir)')" SourceFiles="$(ProjectDir)NewGamePlusConfig.xml" DestinationFolder="$(PackageDir)" SkipUnchangedFiles="true" />
     <Copy Condition="Exists('$(PackageDir)')" SourceFiles="$(ProjectDir)package.xml" DestinationFolder="$(PackageDir)" SkipUnchangedFiles="true" />
+    <Copy Condition="Exists('$(PackageDir)')" SourceFiles="$(ProjectDir)preview.jpg" DestinationFolder="$(PackageDir)" SkipUnchangedFiles="true" />
   </Target>
 </Project>
