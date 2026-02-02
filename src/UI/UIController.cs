@@ -21,6 +21,9 @@ public static class UIController
 			}
 			ModOptionController controller = ModOptionController.Register("nyaarium.newgameplusplus", "mod.tooltip", Array.Empty<object>());
 
+			string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+			string version = ModLocalization.GetVersionFromPackageXml(directoryName);
+
 			// Register mod name translation (GUID -> display name)
 			controller.SetTranslation("EN", "nyaarium.newgameplusplus", ModLocalization.GetForLanguage(ModLocalization.ModTitle, "EN"));
 			controller.SetTranslation("JP", "nyaarium.newgameplusplus", ModLocalization.GetForLanguage(ModLocalization.ModTitle, "JP"));
@@ -31,19 +34,20 @@ public static class UIController
 			controller.SetTranslation("JP", "mod.tooltip", ModLocalization.GetForLanguage(ModLocalization.ModTooltip, "JP"));
 			controller.SetTranslation("CN", "mod.tooltip", ModLocalization.GetForLanguage(ModLocalization.ModTooltip, "CN"));
 
-			string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 			string xmlPath = Path.Combine(directoryName, "NewGamePlusConfig.xml");
 			if (File.Exists(xmlPath))
 			{
 				using StreamReader streamReader = new StreamReader(xmlPath);
 				controller.SetPreBuildWithXml(streamReader.ReadToEnd());
 			}
-			RegisterEvents(controller);
+			RegisterEvents(controller, version);
 		}
 	}
 
-	private static void RegisterEvents(ModOptionController controller)
+	private static void RegisterEvents(ModOptionController controller, string version)
 	{
+		string configPanelTitle = ModLocalization.Get(ModLocalization.ModTitle) + (!string.IsNullOrEmpty(version) ? " v" + version : "");
+
 		Action<OptionUIBuilder> onBuildUIHandler = (OptionUIBuilder builder) =>
 		{
 			OptVLayout mainLayout = builder.GetPreBuild<OptVLayout>("vlayout01");
@@ -58,7 +62,7 @@ public static class UIController
 						var topicText = topicTransform.GetComponent<UnityEngine.UI.Text>();
 						if (topicText != null)
 						{
-							topicText.text = ModLocalization.Get(ModLocalization.ConfigTitle);
+							topicText.text = configPanelTitle;
 						}
 					}
 				}

@@ -34,7 +34,6 @@ public static class ModLocalization
 	public const string ModTitle = "ModTitle";
 	public const string ExportSuccess = "ExportSuccess";
 	public const string ExportCurrentSave = "ExportCurrentSave";
-	public const string ConfigTitle = "ConfigTitle";
 	public const string InGameOptionsTitle = "InGameOptionsTitle";
 	public const string ImportSettingsTitle = "ImportSettingsTitle";
 	public const string DebugInventorySlots = "DebugInventorySlots";
@@ -484,16 +483,6 @@ public static class ModLocalization
 		},
 		new LocalizedString
 		{
-			Key = "ConfigTitle",
-			Translations = new Dictionary<string, string>
-			{
-				{ "EN", "New Game++ Configuration" },
-				{ "JP", "New Game++ 設定" },
-				{ "CN", "新游戏++ 配置" }
-			}
-		},
-		new LocalizedString
-		{
 			Key = "InGameOptionsTitle",
 			Translations = new Dictionary<string, string>
 			{
@@ -704,6 +693,27 @@ public static class ModLocalization
 		catch (Exception ex)
 		{
 			return new ValidationResult { IsValid = false, Message = $"Error reading XML: {ex.Message}" };
+		}
+	}
+
+	/// <summary>
+	/// Reads the version from package.xml in the given mod directory. Returns null if file is missing or version element not found.
+	/// </summary>
+	public static string GetVersionFromPackageXml(string modDirectory)
+	{
+		if (string.IsNullOrEmpty(modDirectory))
+			return null;
+		string xmlPath = Path.Combine(modDirectory, "package.xml");
+		if (!File.Exists(xmlPath))
+			return null;
+		try
+		{
+			XDocument doc = XDocument.Load(xmlPath);
+			return doc.Root?.Element("version")?.Value?.Trim();
+		}
+		catch
+		{
+			return null;
 		}
 	}
 
