@@ -106,6 +106,7 @@ public class CharacterDumpData
 	[DataMember] public int player_lucky_coin { get; set; }
 	[DataMember] public int player_little_dead { get; set; }
 	[DataMember] public int player_little_saved { get; set; }
+	[DataMember] public int playerKumi { get; set; }
 	[DataMember] public List<int> playerKnownBGMs { get; set; }
 	[DataMember] public List<int> playerSketches { get; set; }
 	[DataMember] public List<int> playerKnownCraft { get; set; }

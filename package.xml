@@ -5,7 +5,7 @@
   <author>nyaarium</author>
   <tags>General</tags>
   <loadPriority>100</loadPriority>
-  <version>1.1.0</version>
+  <version>1.1.1</version>
   <description>
     [h2]New Game++[/h2]
 
@@ -55,6 +55,7 @@
     [*]Known BGMs (Tapes)
     [*]Sketches (Drawings)
     [*]Key Items: Fragrance of Goddess, Black Cat's Saliva, Feather Shard of Goddess, and Lucky Coin (you will need to go buy the license again)
+    [*]Secret Experience of Kumiromi books the character has used.
     [/list]
 
     [b]Configuable in Mod Options:[/b]
@@ -91,6 +92,12 @@
     [/list]
 
     [h2]Updates[/h2]
+
+    [b]2026.02.02[/b]
+
+    [list]
+    [*]Now includes Secret Experience of Kumiromi books the character has used.
+    [/list]
 
     [b]2026.02.01[/b]
 

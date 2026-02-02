@@ -79,6 +79,10 @@ public static class CharacterImporter
 		{
 			EClass.player.stats.deepest = dumpData.playerDeepest;
 		}
+		if (dumpData.playerKumi > 0)
+		{
+			EClass.player.stats.kumi = dumpData.playerKumi;
+		}
 		if (dumpData.playerKnownBGMs != null && dumpData.playerKnownBGMs.Count > 0)
 		{
 			EClass.player.knownBGMs = dumpData.playerKnownBGMs.ToHashSet();

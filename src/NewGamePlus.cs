@@ -53,6 +53,7 @@ public class NewGamePlus : BaseUnityPlugin
 			player_lucky_coin = EClass.player.CountKeyItem("lucky_coin"),
 			player_little_dead = EClass.player.little_dead,
 			player_little_saved = EClass.player.little_saved,
+			playerKumi = EClass.player.stats.kumi,
 			playerKnownBGMs = EClass.player.knownBGMs.ToList(),
 			playerSketches = EClass.player.sketches.ToList(),
 			playerKnownCraft = EClass.player.knownCraft.ToList(),
