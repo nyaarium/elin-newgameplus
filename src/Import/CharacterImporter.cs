@@ -683,8 +683,8 @@ public static class CharacterImporter
 				container.things.Foreach(addNestedContainersToMap, onlyAccessible: false);
 			}
 
-			// First pass: Import inventory items (UID 0) via Pick(); then track container UIDs
-			// Use Pick() for inventory - it handles slot assignment; overfill drops to ground
+			// First pass: Import player inventory items (UID 0) by direct AddThing to a free slot
+			// Pick()/GetDest() can return invalid here, so bypass and place directly
 			foreach (ContainerItemData containerItemData in dumpData.containerContents)
 			{
 				if (containerItemData.parentContainerUid == 0)
@@ -692,18 +692,29 @@ public static class CharacterImporter
 					Card spawnedCard = ThingUtils.RestoreThingFromData(containerItemData.item);
 					if (spawnedCard != null)
 					{
-						// Place item on ground first (Pick() requires item to be in zone to pick it up)
-						if (EClass._zone != null && c.pos != null && c.pos.IsValid)
+						List<int> occupied = StorageAuto.GetOccupiedInventorySlots(c);
+						int freeSlot = 0;
+						while (freeSlot < ItemSlotManager.PlayerInventoryMaxSlots && occupied.Contains(freeSlot))
+							freeSlot++;
+
+						bool placedOnChara = false;
+						if (freeSlot < ItemSlotManager.PlayerInventoryMaxSlots)
 						{
-							EClass._zone.AddCard(spawnedCard, c.pos);
+							if (EClass._zone != null && c.pos != null && c.pos.IsValid)
+								EClass._zone.AddCard(spawnedCard, c.pos);
+							c.AddThing(spawnedCard.Thing, tryStack: true, destInvX: freeSlot, destInvY: -1);
+							Card itemCard = (Card)spawnedCard.Thing;
+							placedOnChara = (itemCard.parent == c);
+							if (placedOnChara && itemCard.invX < 0)
+							{
+								itemCard.invX = freeSlot;
+								itemCard.invY = ItemSlotManager.InvY.Inventory;
+							}
 						}
 
-						// Use Pick() - it uses GetDest() to find placement and handles slot assignment automatically
-						// Pick() will drop to ground if inventory is full (dest.IsValid == false)
-						Thing pickedResult = c.Pick(spawnedCard.Thing, msg: false, tryStack: true);
-						bool wasDropped = pickedResult.parent == EClass._zone;
+						if (!placedOnChara && EClass._zone != null && c.pos != null && c.pos.IsValid)
+							EClass._zone.AddCard(spawnedCard, c.pos);
 
-						// If this is a container, map old UID to new UID (use exported UID from ThingData)
 						if (spawnedCard.IsContainer && containerItemData.item.containerUid.HasValue)
 						{
 							int containerOldUid = containerItemData.item.containerUid.Value;
@@ -711,12 +722,8 @@ public static class CharacterImporter
 							{
 								int containerNewUid = spawnedCard._ints[CardIntsIndices.UidOrType];
 								oldUidToNewUid[containerOldUid] = containerNewUid;
-
-								// If container was dropped, add it to uidMap immediately (it's on the ground, not in inventory)
-								if (wasDropped)
-								{
+								if (!placedOnChara)
 									uidMap[containerNewUid] = spawnedCard;
-								}
 							}
 						}
 					}
