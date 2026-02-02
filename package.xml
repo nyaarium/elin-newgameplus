@@ -70,8 +70,10 @@
     [*]Include Skills
     [*]Include Faith
     [*]Include Karma
-    [*]Includes your fame (Warning: your tax will start high)
+    [*]Include Fame (Warning: your tax will start high)
+    [*]Include Influence
     [*]Include Craft Recipes
+    [*]Include Codex
     [*]Cure Ether Diseases
     [*]Cure Mutations
     [/list]
@@ -82,7 +84,6 @@
     [*]Any exceptions mentioned above
     [*]『Unique Names』on legendary/mythical items (these are randomly generated based on item UID and game seed, which changes on a new run)
     [*]Home level, home policy, home skills, or home feats
-    [*]Influence on NPC zones
     [*]Companions
     [*]Buildings
     [*]Guild experience
