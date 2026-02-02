@@ -56,9 +56,9 @@ Credits again to the original author for creating the original mod. This mod has
 - Include Faith
 - Include Karma
 - Include Fame (tax is based on fame. importing fame will start you with high taxes)
+- Include Influence
 - Include Craft Recipes
 - Include Codex
-- Include Influence
 - Cure Ether Diseases
 - Cure Mutations
 
@@ -74,7 +74,11 @@ Credits again to the original author for creating the original mod. This mod has
 
 ## Updates
 
-Bugs Fixes and Rewrites:
+**2026.02.01**
+
+- Added support for Influence and Card Codex.
+
+**2026.01.28**
 
 - Fixed an exception because the mod was referencing an old field "qualityTier". _(I think it was renamed to "tier" at some point)_
 - Included as much item properties as possible _(material, color, etc.)_
