@@ -96,6 +96,7 @@
 
     [list]
     [*]Added support for Influence and Card Codex.
+    [*]Fixed bug where inventory would still dump to ground after importing.
     [/list]
 
     [b]2026.01.28[/b]
