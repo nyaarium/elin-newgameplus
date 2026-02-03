@@ -5,7 +5,7 @@
   <author>nyaarium</author>
   <tags>General</tags>
   <loadPriority>100</loadPriority>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
   <description>
     [h2]New Game++[/h2]
 
@@ -97,6 +97,8 @@
 
     [list]
     [*]Now includes Secret Experience of Kumiromi books the character has used.
+    [*]Fixed character import: body parts from Chaos Shape feat now restore correctly.
+    [*]Fixed feat stripping: race and job starting feats (e.g., Gourmet) are now preserved when "Include Acquired Feats" is disabled.
     [/list]
 
     [b]2026.02.01[/b]

@@ -222,6 +222,20 @@ public static class CharacterImporter
 		bool includeFeats = ModConfig.GetOption("includeAcquiredFeats")?.Value == true;
 		if (!includeLevel || !includeFeats)
 		{
+			// Get current race/job's elementMaps to check for starting feats
+			string currentRaceId = ((Card)c).c_idRace;
+			string currentJobId = ((Card)c).c_idJob;
+			Dictionary<int, int> raceElementMap = null;
+			Dictionary<int, int> jobElementMap = null;
+			if (!string.IsNullOrEmpty(currentRaceId) && EClass.sources.races.map.TryGetValue(currentRaceId, out SourceRace.Row raceRow))
+			{
+				raceElementMap = raceRow.elementMap;
+			}
+			if (!string.IsNullOrEmpty(currentJobId) && EClass.sources.jobs.map.TryGetValue(currentJobId, out SourceJob.Row jobRow))
+			{
+				jobElementMap = jobRow.elementMap;
+			}
+
 			foreach (ElementData elementData in dumpData.charaElements)
 			{
 				SourceElement.Row sourceRow = null;
@@ -229,6 +243,14 @@ public static class CharacterImporter
 				{
 					if (IsPurchasableFeat(sourceRow))
 					{
+						// Skip if this feat is a starting bonus from current race or job
+						bool isRaceStartingFeat = raceElementMap != null && raceElementMap.ContainsKey(elementData.id);
+						bool isJobStartingFeat = jobElementMap != null && jobElementMap.ContainsKey(elementData.id);
+						if (isRaceStartingFeat || isJobStartingFeat)
+						{
+							continue; // Don't strip race/job starting feats
+						}
+
 						// Refund feat points only if BOTH:
 						// - "Include Player Level" is true (they had levels/points)
 						// - "Include Acquired Feats" is false (we're removing purchased feats)
@@ -245,6 +267,13 @@ public static class CharacterImporter
 					}
 				}
 			}
+		}
+
+		// Import extra body parts (from Chaos Shape feat, etc.) if Include Acquired Feats is enabled
+		// This must be done after feats are imported because Chaos Shape adds body parts
+		if (includeFeats && dumpData.charaBodyParts != null && dumpData.charaBodyParts.Count > 0)
+		{
+			ImportBodyParts(c, dumpData.charaBodyParts);
 		}
 
 		if (ModConfig.GetOption("includeBank")?.Value == true && dumpData.bankItems != null && dumpData.bankItems.Count > 0)
@@ -892,5 +921,74 @@ public static class CharacterImporter
 		}
 
 		return true;
+	}
+
+	/// <summary>
+	/// Imports extra body parts (from Chaos Shape feat, etc.) that were gained beyond the race baseline.
+	/// Compares exported body parts with current race's baseline and adds any extras.
+	/// </summary>
+	private static void ImportBodyParts(Chara c, List<int> exportedBodyParts)
+	{
+		if (exportedBodyParts == null || exportedBodyParts.Count == 0)
+		{
+			return;
+		}
+
+		// Get current body parts (after race has been applied)
+		HashSet<int> validBodySlotIds = ItemSlotManager.GetValidBodySlotElementIds().ToHashSet();
+
+		// Count how many of each body part type the character currently has
+		Dictionary<int, int> currentPartCounts = new Dictionary<int, int>();
+		foreach (BodySlot slot in c.body.slots)
+		{
+			if (validBodySlotIds.Contains(slot.elementId))
+			{
+				if (!currentPartCounts.ContainsKey(slot.elementId))
+				{
+					currentPartCounts[slot.elementId] = 0;
+				}
+				currentPartCounts[slot.elementId]++;
+			}
+		}
+
+		// Count how many of each body part type were exported
+		Dictionary<int, int> exportedPartCounts = new Dictionary<int, int>();
+		foreach (int elementId in exportedBodyParts)
+		{
+			if (validBodySlotIds.Contains(elementId))
+			{
+				if (!exportedPartCounts.ContainsKey(elementId))
+				{
+					exportedPartCounts[elementId] = 0;
+				}
+				exportedPartCounts[elementId]++;
+			}
+		}
+
+		// Add any extra body parts that were exported but not present
+		bool addedParts = false;
+		foreach (KeyValuePair<int, int> exported in exportedPartCounts)
+		{
+			int elementId = exported.Key;
+			int exportedCount = exported.Value;
+			int currentCount = currentPartCounts.ContainsKey(elementId) ? currentPartCounts[elementId] : 0;
+
+			int partsToAdd = exportedCount - currentCount;
+			for (int i = 0; i < partsToAdd; i++)
+			{
+				c.body.AddBodyPart(elementId);
+				addedParts = true;
+			}
+		}
+
+		// Refresh body parts if we added any
+		if (addedParts)
+		{
+			c.body.RefreshBodyParts();
+			if (c.IsPC && WidgetEquip.Instance != null)
+			{
+				WidgetEquip.Instance.Rebuild();
+			}
+		}
 	}
 }
