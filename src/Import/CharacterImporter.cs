@@ -243,12 +243,25 @@ public static class CharacterImporter
 				{
 					if (IsPurchasableFeat(sourceRow))
 					{
-						// Skip if this feat is a starting bonus from current race or job
-						bool isRaceStartingFeat = raceElementMap != null && raceElementMap.ContainsKey(elementData.id);
-						bool isJobStartingFeat = jobElementMap != null && jobElementMap.ContainsKey(elementData.id);
-						if (isRaceStartingFeat || isJobStartingFeat)
+						// Calculate base tier from race/job (use higher if feat appears in both)
+						int baseTier = 0;
+						if (raceElementMap != null && raceElementMap.TryGetValue(elementData.id, out int raceTier))
 						{
-							continue; // Don't strip race/job starting feats
+							baseTier = System.Math.Max(baseTier, raceTier);
+						}
+						if (jobElementMap != null && jobElementMap.TryGetValue(elementData.id, out int jobTier))
+						{
+							baseTier = System.Math.Max(baseTier, jobTier);
+						}
+
+						// vBase = purchased portion only (race/job contribution is in vSource, not exported)
+						// If vBase > 0, player purchased levels that should be stripped
+						int purchasedLevels = elementData.vBase;
+
+						// Skip if no purchased levels to strip
+						if (purchasedLevels <= 0)
+						{
+							continue;
 						}
 
 						// Refund feat points only if BOTH:
@@ -257,13 +270,28 @@ public static class CharacterImporter
 						// If level is unchecked, they never had the points to begin with, so don't refund
 						if (includeLevel && !includeFeats)
 						{
-							if (sourceRow.cost != null && sourceRow.cost.Length > 0 && sourceRow.cost[0] > 0)
+							// Calculate per-tier refund for the purchased levels
+							// purchasedLevels represents how many tiers above race/job base were bought
+							// We need to refund cost for tiers (baseTier+1) through (baseTier+purchasedLevels)
+							int refund = 0;
+							if (sourceRow.cost != null && sourceRow.cost.Length > 0)
 							{
-								((Card)c).feat += elementData.vBase * sourceRow.cost[0];
+								for (int tier = baseTier + 1; tier <= baseTier + purchasedLevels; tier++)
+								{
+									// Use TryGet pattern: cost[tier-1], fallback to last element if out of range
+									int costIndex = System.Math.Min(tier - 1, sourceRow.cost.Length - 1);
+									int tierCost = sourceRow.cost[costIndex];
+									if (tierCost > 0)
+									{
+										refund += tierCost;
+									}
+								}
 							}
+							((Card)c).feat += refund;
 						}
-						// Remove the feat (calls feat.Apply(-value) to reverse stat bonuses)
-						c.SetFeat(elementData.id, 0);
+
+						// Downgrade to base tier (or remove if baseTier is 0)
+						c.SetFeat(elementData.id, baseTier);
 					}
 				}
 			}
