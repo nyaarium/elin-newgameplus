@@ -506,9 +506,9 @@ public static class ModLocalization
 			Key = "DebugInventorySlots",
 			Translations = new Dictionary<string, string>
 			{
-				{ "EN", "Debug Inventory Slots" },
-				{ "JP", "デバッグインベントリスロット" },
-				{ "CN", "调试库存槽位" }
+				{ "EN", "Debug Fill Slots" },
+				{ "JP", "Debug Fill Slots" },
+				{ "CN", "Debug Fill Slots" }
 			}
 		},
 		new LocalizedString
@@ -517,8 +517,8 @@ public static class ModLocalization
 			Translations = new Dictionary<string, string>
 			{
 				{ "EN", "Debug Import" },
-				{ "JP", "デバッグインポート" },
-				{ "CN", "调试导入" }
+				{ "JP", "Debug Import" },
+				{ "CN", "Debug Import" }
 			}
 		},
 		new LocalizedString
