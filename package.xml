@@ -93,6 +93,12 @@
 
     [h2]Updates[/h2]
 
+    [b]2026.02.03[/b]
+
+    [list]
+    [*]Fixed feat tier downgrade calculation: purchased feat tiers now correctly downgrade to race/job base tier and refund per-tier costs when "Include Acquired Feats" is disabled.
+    [/list]
+
     [b]2026.02.02[/b]
 
     [list]
