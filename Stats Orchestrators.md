@@ -3,13 +3,16 @@
 ## Variables / Maps / Arrays
 
 ### Element Fields
+
 - **`vBase`** (int field) - Base value before modifiers. Modified by:
   - Training/leveling: `ModExp()` calls `ModBase(ele, 1)` when `vExp >= ExpToNext` → permanent +1 to `vBase`
   - Feats: When set directly via `SetFeat()`, the feat's own value goes to `vBase`. When applied via `Feat.Apply()`, OTHER elements' `vBase` is modified
   - Permanent mutations: Ether diseases and other permanent effects modify `vBase` via `ModBase()`
   - **Note**: Race/Job bonuses go to `vSource`, NOT `vBase`. Material bonuses also go to `vSource`
+  - **Feats (tier)**: For feat elements, `vBase` = purchased tier count only. Race/job tier is in `vSource`. Total tier = `Value` = `vBase + vSource`. `SetFeat(id, value)` uses `SetBase(id, value - (feat?.vSource ?? 0))` so the stored `vBase` is the delta above race/job.
 - **`vSource`** (int field) - Accumulates modifiers from element maps (race, job, material). Modified by:
   - `ApplyElementMap()`: Race/Job/Material bonuses modify `vSource` via `orCreateElement.vSource += calculatedValue`
+  - For feats from race/job, the map value is the **tier level** (1, 2, 3) and ends up in `vSource`; total feat tier = `vBase + vSource`
   - Added to `vBase` for `ValueWithoutLink` calculation: `ValueWithoutLink = vBase + vSource`
 - **`vLink`** (int field) - Bonuses from linked containers (equipment, conditions). Modified by:
   - Equipment: `SetParent(owner)` → `ModLink()` adds equipment's `vBase + vSource` to character's `vLink`
@@ -39,6 +42,7 @@
   - Special values: `vExp == -1` = faction-wide element, `vExp == -2` = party-wide element
 
 ### Chara Element Containers
+
 - **`elements`** (`ElementContainerCard`, inherited from `Card`) - Main container for character stats (STR, MAG, END, etc.). Contains elements with `vBase`, `vSource`, `vLink` values. Overrides `ValueBonus()` to add faction bonuses and special calculations (lucky coin, machine bonuses, etc.).
 - **`tempElements`** (`ElementContainer`) - Separate container for temporary modifiers (afflictions, ether diseases). Created lazily on first `ModTempElement()` call. Elements in this container have their own `vBase` values, separate from main `elements`. Linked to character via `SetParent(this)` on creation. Used for UI display of "Temporary Weakness -X" lines via `BonusInfo.WriteNote()`.
 - **`faithElements`** (`ElementContainer`) - Container for faith-based bonuses. Created when character has a faith (`Chara.faith`) via `RefreshFaith()`. Elements are set via `SetBase()` based on piety value and faith's element map, then linked to character via `SetParent(this)`. Displayed in UI via `BonusInfo.WriteNote()` which calls `faithElements.Value(id)`. Can be null if character has no faith.
@@ -50,12 +54,14 @@
 - **`EClass.pc.faction.charaElements`** (`ElementContainerFaction`) - Faction-based element container for PC faction members. Contains global elements from equipped items (items with `IsGlobalElement = true`). Added via `OnEquip()` when PC faction members equip items, removed via `OnUnequip()` when unequipped. Elements are added to this container via `ModBase()` when global equipment is equipped. **How it affects stats**: Added via `ElementContainer.ValueBonus()` → `faction.charaElements.Value(ele)` for PC faction members. Also added to `vLink` for display in "Base X + Y" in `Element._WriteNote()`: `num += faction.charaElements.Value(id)`. Included in `Element.Value` calculation: `Value = ValueWithoutLink + vLink + ValueBonus(owner)` where `ValueBonus()` returns `faction.charaElements.Value(ele)`. **Special behavior**: `OnEquip()`/`OnUnequip()` check `IsEffective(t)` to filter by deity alignment. Calls `CheckDirty()` to refresh all PC faction members when modified.
 
 ### Zone Containers
+
 - **`EClass._zone.elements`** (`ElementContainerZone`) - Zone-based element container. Contains zone-specific elements (policies, techs, land feats). Overrides `OnLearn()` and `OnLevelUp()` for zone-specific messages. Used for zone-wide bonuses and unlocks.
 - **`Faction.elements`** (`ElementContainerZone`) - Faction's zone container. Same as zone elements but for faction-wide effects.
 
 ## Functions (Recalculations / Display)
 
 ### Container Type Behavior
+
 - **`ElementContainer`** (base class) - Base container class. `ValueBonus()` returns 0 by default. Uses `dict` (`Dictionary<int, Element>`) internally to store and retrieve elements.
 - **`ElementContainerCard`** - Used for `Card.elements`. Overrides `ValueBonus()` to add:
   - Faction bonuses: `faction.charaElements.Value(ele)`
@@ -69,6 +75,7 @@
 - **`ElementContainerField`** - Used for field effects. Empty subclass (just inherits base functionality).
 
 ### Element Value Calculation
+
 - **`Element.Value`** (int property) - Returns calculated total: `ValueWithoutLink + vLink + ((owner != null) ? owner.ValueBonus(this) : 0)`
   - `ValueWithoutLink = vBase + vSource`
   - `vLink` = bonuses from linked containers (equipment, conditions, workElements)
@@ -93,6 +100,7 @@
   - Used by `ApplyElementMap()` for skill elements (`category == "skill"`): `vSourcePotential += GetSourcePotential(value) * num`
 
 ### Element Modification
+
 - **`ElementContainer.ModLink(int id, int v)`** (private method) - Modifies an element's `vLink` by amount `v`:
   - Gets/creates element: `GetOrCreateElement(id)`
   - Modifies: `orCreateElement.vLink += v`
@@ -106,7 +114,7 @@
   - If parent container exists and element can link: Calls `parent.ModLink(ele, v)` to propagate change to parent's `vLink`
   - Calls `orCreateElement.CheckLevelBonus(this)` and `orCreateElement.OnChangeValue()`
   - If element becomes empty (all values 0): Removes element via `Remove(ele.id)`
-  - **Context matters**: 
+  - **Context matters**:
     - `elements.ModBase()` = **permanent** change to main stats (e.g., feats affecting other elements, curses/blessings on items, training level-ups)
     - `tempElements.ModBase()` = **temporary** change (used by `ModTempElement()`, shown as "Temporary Weakness" in UI)
   - **Example**: When ether disease progresses, it calls `SetFeat()` which modifies main `elements.vBase` (permanent). But "Temporary Weakness -5" display comes from `tempElements.ModBase()` via `ModTempElement()`, which is separate.
@@ -137,6 +145,7 @@
   - **Overloads**: `GetElement(string alias)` - converts alias to ID first
 
 ### UI Display
+
 - **`Element._WriteNote(UINote n, ElementContainer owner, Action<UINote> onWriteNote, bool isRef, bool addHeader = true)`** - Renders the main stat panel:
   - **Header**: Adds header with element name (or ability header for `Act` elements)
   - **Detail text**: Adds element detail/flavor text if available
@@ -164,6 +173,7 @@
   - **Special cases**: Handles lucky coin (for LUK), machine bonuses (for STR/DEX/SPD), etc.
 
 ### Condition Access
+
 - **`BaseCondition.GetElementContainer()`** (virtual method) - Returns `ElementContainer` for condition's stat contributions:
   - Base implementation returns `elements` (the condition's `ElementContainerCondition`)
   - Can be overridden (e.g., `ConDisease.GetElementContainer()` returns a different container)
@@ -185,8 +195,9 @@
 ## Stat Modification
 
 ### Temporary Modifiers
-- **`Chara.ModTempElement(int ele, int a, bool naturalDecay, bool onlyRenew)`** - Modifies elements within `tempElements`. Used for afflictions, temporary stat changes, etc. 
-  - **Early return**: If `a < 0` and character has "sustain_" element for this stat, returns early (sustain prevents negative temp modifiers)
+
+- **`Chara.ModTempElement(int ele, int a, bool naturalDecay, bool onlyRenew)`** - Modifies elements within `tempElements`. Used for afflictions, temporary stat changes, etc.
+  - **Early return**: If `a < 0` and character has "sustain\_" element for this stat, returns early (sustain prevents negative temp modifiers)
   - **Container creation**: If `tempElements == null`, creates new `ElementContainer()` and calls `tempElements.SetParent(this)` to link it to character
   - **Feat 1215 bonus**: If character has element 1215 and `a > 0`, multiplies `a` by 150/100 (50% bonus to positive temp modifiers)
   - **Clamping logic**: Calculates limits based on `elements.ValueWithoutLink(ele)`:
@@ -199,13 +210,15 @@
   - **Note**: This is what creates the "Temporary Weakness -X" display in the UI. If disease progression makes it worse, it would call `ModTempElement()` again with a larger negative value.
 
 ### Feats / Traits
+
 - **`Chara.SetFeat(int id, int value = 1, bool msg = false)`** - Sets a feat/trait:
   1. Gets existing feat: `elements.GetElement(id) as Feat`
   2. If feat exists and `feat.Value > 0`: Calls `feat.Apply(-feat.Value, elements)` to remove old effects (reverses previous modifications)
-  3. Sets feat's own `vBase` via `elements.SetBase(id, value - (feat?.vSource ?? 0))` - this sets the feat's value, accounting for any `vSource` from race/job
+  3. Sets feat's own `vBase` via `elements.SetBase(id, value - (feat?.vSource ?? 0))` - stores only the delta above race/job so that `Value` = `vBase + vSource` = desired total tier. There is no separate "demote" API; use `SetFeat(id, lowerValue)` to downgrade.
   4. If `feat.Value != 0`: Calls `feat.Apply(feat.Value, elements)` to apply new effects
   5. Calls `Refresh()` and `CalculateMaxStamina()` if game is started
   6. If `msg=true`: Displays message about gaining/changing feat
+- **Feat tier and cost (disassembly)**: `SourceElement.Row.cost` is `int[]` with per-tier cost: `cost[0]` = tier 1, `cost[1]` = tier 2, etc. `FEAT.CostLearn` returns `source.cost.TryGet(Value - 1)` (index by current tier). For multi-ID tier chains (e.g. mutations), `aliasParent` points from **child to parent**; `SetMutation()` clears the parent feat before setting the child. No predefined tier-order list; hierarchy is from `aliasParent` traversal.
 - **`Feat.Apply(int a, ElementContainer owner, bool hint = false)`** - Applies a feat's effects:
   - **Important**: This modifies OTHER elements' `vBase` via `owner.ModBase()`, NOT the feat's own `vBase`
   - If `!hint && a > 0 && owner.Chara != null`: Sets feat's own `vPotential = owner.Chara.LV` (feat's potential, not other elements)
@@ -217,11 +230,12 @@
   - **Note**: The feat's own value is stored in its `vBase` (set by `SetFeat()`), but `Apply()` modifies OTHER elements' `vBase`
 
 ### Mutations / Ether Diseases
+
 - **`Chara.MutateRandom(int vec = 0, int tries = 100, bool ether = false, BlessedState state = BlessedState.Normal)`** - Applies or removes random mutations:
   - **Early return**: If `!ether && vec >= 0 && HasElement(406)` (resistance), 80% chance to resist and return false
   - **Mutation selection**: Filters elements by category (`ether ? "ether" : "mutation"`) and excludes those with "noRandomMutation" tag
   - **Removal logic** (when `vec < 0 && ether`): On first try (`i == 0`), if `c_corruptionHistory != null && Count > 0`, uses `c_corruptionHistory.LastItem()` to get most recent mutation ID and removes it from list (LIFO stack behavior)
-  - **Value calculation**: 
+  - **Value calculation**:
     - If element exists: `num = element.Value + vec` (or random ±1 if `vec == 0`)
     - Clamps `num` to `element.source.max - 1` if exceeds max
     - Skips if mutation would decrease when `vec > 0` (only allows increases when adding)
@@ -236,7 +250,7 @@
     - Positive threshold = adds mutation (`vec = 1`)
     - Negative threshold = removes mutation (`vec = -1`, uses `c_corruptionHistory` LIFO)
   - **Corruption update**: After mutations, updates `corruption += a`
-  - **Ether sum recalculation**: Calculates sum of all ether elements (`category == "ether"`), then **sets `corruption = etherSum * 100 + corruption % 100`** (overwrites corruption with ether sum * 100 + remainder)
+  - **Ether sum recalculation**: Calculates sum of all ether elements (`category == "ether"`), then **sets `corruption = etherSum * 100 + corruption % 100`** (overwrites corruption with ether sum \* 100 + remainder)
 - **Curing Ether Disease**:
   - **Method 1**: Call `ModCorruption(-100000)` which triggers `MutateRandom(vec: -1, ether: true)` to remove mutations via `c_corruptionHistory` LIFO stack
   - **Method 2**: `CoreDebug.Fix_EtherDisease()` - Debug function that:
@@ -360,7 +374,7 @@
   - If `IsPCC`: Calls `EClass.game.uniforms.Apply()` for PCC uniforms
 - **`ElementContainer.ApplyElementMap(int uid, SourceValueType type, Dictionary<int, int> map, int lv, bool invert = false, bool applyFeat = false)`** - Core function for applying element maps (race, job, material):
   - Sets random seed to `uid` for deterministic calculations
-  - Iterates through `map` (element ID → base value pairs)
+  - Iterates through `map` (element ID → value pairs). For feats, the value is the **tier level** (1, 2, 3) granted by race/job; for skills/attributes it is the base multiplier used in `GetSourceValue()`/`GetSourcePotential()`.
   - For each element:
     1. Gets or creates element via `GetOrCreateElement(item.Key)`
     2. If element category is "skill": Modifies `vSourcePotential` via `GetSourcePotential(value) * num`
@@ -427,6 +441,7 @@
 ### Stat Modification Flow
 
 **When a stat is modified** (e.g., `ModBase()`, `SetBase()`, `ModLink()`):
+
 1. **Direct modification**: Field is updated (`vBase += v`, `vSource = v`, `vLink += v`)
 2. **Hook triggered**: `OnChangeValue()` is called on the element
 3. **Element-specific updates**: If element overrides `OnChangeValue()`, it triggers targeted UI updates (e.g., `LayerAbility.SetDirty()`, `SetDirtyWeight()`)
@@ -434,6 +449,7 @@
 5. **Derived state**: If needed, `Refresh()` is called to update derived character state (visibility, conditions, etc.)
 
 **When a stat is accessed** (e.g., `element.Value`, `container.Value(id)`):
+
 1. **On-demand calculation**: Property calculates value from current fields (`vBase + vSource + vLink + ValueBonus`)
 2. **No caching**: Value is calculated fresh each time - always reflects current state
 3. **UI reads directly**: UI code reads `Value` property directly when rendering, ensuring it always sees current values
