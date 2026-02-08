@@ -188,20 +188,15 @@ public static class CharacterImporter
 				{
 					string category = sourceRow.category;
 
-					// Only import if the corresponding option is enabled
-					if (category == "ability" && ModConfig.GetOption("includeAbilities")?.Value == true)
+					bool include = category switch
 					{
+						"ability" => ModConfig.GetOption("includeAbilities")?.Value == true,
+						"attribute" => ModConfig.GetOption("includeAttributes")?.Value == true,
+						"skill" => ModConfig.GetOption("includeSkills")?.Value == true,
+						_ => true
+					};
+					if (include)
 						elementsToImport.Add(elementData);
-					}
-					else if (category == "skill" && ModConfig.GetOption("includeSkills")?.Value == true)
-					{
-						elementsToImport.Add(elementData);
-					}
-					else if (category != "ability" && category != "skill")
-					{
-						// Import other elements (attributes, feats, etc.) regardless of options
-						elementsToImport.Add(elementData);
-					}
 				}
 				else
 				{

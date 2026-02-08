@@ -184,6 +184,28 @@ public static class ModLocalization
 		},
 		new UIOption
 		{
+			ConfigKey = "includeAttributes",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include character STR, END, DEX, etc. when importing",
+			ToggleId = "importIncludeAttributesToggle",
+			LabelKey = "ImportIncludeAttributes",
+			TooltipKey = "ImportIncludeAttributesTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Main Attributes" },
+				{ "JP", "主能力を含める" },
+				{ "CN", "包含主能力" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Includes character STR, END, DEX, etc." },
+				{ "JP", "筋力・耐久・器用などを含めます。" },
+				{ "CN", "包含角色 力量、体质、灵巧 等。" }
+			}
+		},
+		new UIOption
+		{
 			ConfigKey = "includeSkills",
 			ConfigSection = "import",
 			DefaultValue = true,

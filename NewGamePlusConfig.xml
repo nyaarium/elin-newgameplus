@@ -33,6 +33,10 @@
                 <contentId>ImportIncludeAbilities</contentId>
                 <tooltip>ImportIncludeAbilitiesTooltip</tooltip>
             </toggle>
+            <toggle id="importIncludeAttributesToggle">
+                <contentId>ImportIncludeAttributes</contentId>
+                <tooltip>ImportIncludeAttributesTooltip</tooltip>
+            </toggle>
             <toggle id="importIncludeSkillsToggle">
                 <contentId>ImportIncludeSkills</contentId>
                 <tooltip>ImportIncludeSkillsTooltip</tooltip>

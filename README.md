@@ -51,7 +51,8 @@ Credits again to the original author for creating the original mod. This mod has
 - Include Bank
 - Include Player Level
 - Include Acquired Feats (unchecking will refund the points)
-- Include Abilities
+- Include Abilities (Spells)
+- Include Attributes (STR, END, DEX, etc.)
 - Include Skills
 - Include Faith
 - Include Karma
