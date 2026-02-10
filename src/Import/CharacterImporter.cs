@@ -389,12 +389,59 @@ public static class CharacterImporter
 
 		if (ModConfig.GetOption("cureMutations")?.Value == true)
 		{
+			bool skillsExcluded = ModConfig.GetOption("includeSkills")?.Value != true;
+			bool attributesExcluded = ModConfig.GetOption("includeAttributes")?.Value != true;
+
+			// Snapshot vBase of excluded elements before curing mutations.
+			// When "Include Skills" or "Include Attributes" is off, those elements were not
+			// imported from the dump, so their vBase is at new-character defaults. Curing a
+			// mutation calls Apply(-value) which subtracts stat bonuses that were never applied
+			// on this character, driving vBase negative. Restoring from the snapshot prevents that.
+			Dictionary<int, int> excludedSnapshot = null;
+			if (skillsExcluded || attributesExcluded)
+			{
+				excludedSnapshot = new Dictionary<int, int>();
+				foreach (var kvp in c.elements.dict)
+				{
+					string cat = kvp.Value.source?.category;
+					if ((cat == "skill" && skillsExcluded) || (cat == "attribute" && attributesExcluded))
+					{
+						excludedSnapshot[kvp.Key] = kvp.Value.vBase;
+					}
+				}
+			}
+
 			// Cure non-ether mutations (category == "mutation") - removes the feat/label only
 			foreach (Element element in c.elements.dict.Values.ToList())
 			{
 				if (element.source?.category == "mutation" && element.Value != 0)
 				{
 					c.SetFeat(element.id, 0);
+				}
+			}
+
+			// Restore excluded elements to their pre-cure vBase
+			if (excludedSnapshot != null)
+			{
+				foreach (var kvp in excludedSnapshot)
+				{
+					Element el = c.elements.GetElement(kvp.Key);
+					if (el != null && el.vBase != kvp.Value)
+					{
+						c.elements.ModBase(kvp.Key, kvp.Value - el.vBase);
+					}
+				}
+
+				// Elements in excluded categories that did not exist before the cure (so not in
+				// snapshot) can be created by the cure with negative vBase. Restore them to 0.
+				foreach (Element el in c.elements.dict.Values.ToList())
+				{
+					string cat = el.source?.category;
+					bool excluded = (cat == "skill" && skillsExcluded) || (cat == "attribute" && attributesExcluded);
+					if (excluded && el.vBase < 0 && !excludedSnapshot.ContainsKey(el.id))
+					{
+						c.elements.ModBase(el.id, -el.vBase);
+					}
 				}
 			}
 		}

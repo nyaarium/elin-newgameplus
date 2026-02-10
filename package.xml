@@ -5,7 +5,7 @@
   <author>nyaarium</author>
   <tags>General</tags>
   <loadPriority>100</loadPriority>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
   <description>
     [h2]New Game++[/h2]
 
@@ -93,6 +93,12 @@
     [/list]
 
     [h2]Updates[/h2]
+
+    [b]2026.02.09[/b]
+
+    [list]
+    [*]Fixed bug where mutations could make skills or attributes become negative when "Include Skills" or "Include Attributes" was unchecked.
+    [/list]
 
     [b]2026.02.08[/b]
 
