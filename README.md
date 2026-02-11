@@ -36,14 +36,16 @@ Credits again to the original author for creating the original mod. This mod has
 - Biography or Profile, including name and nickname (except favorite, hobby, and work. _You can use a whip on yourself to change hobby and work anyway._)
 - Portrait (but you need to re-slide your PCC)
 - Race and Class, unless you re-roll it in character creation (Warmage will need to re-choose domain)
-- Level, feats
+- Holy Well
 - Counters for little dead and saved
+- Deepest (deepest floor reached)
+- Kumi (Secret Experience of Kumiromi books the character has used)
+- Work/hobby bonuses from your faction branch (work elements)
 - Known BGMs (Tapes)
 - Sketches (Drawings)
-- Card codex (creatures discovered, kills, weakspots, drop bonus)
 - Key Items: Fragrance of Goddess, Black Cat's Saliva, Feather Shard of Goddess, and Lucky Coin (you will need to go buy the license again)
 
-**Configuable in Mod Options:**
+**Configurable in Mod Options:**
 
 - Include Toolbar
 - Include Worn Equipment
