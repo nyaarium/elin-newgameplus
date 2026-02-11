@@ -50,64 +50,27 @@ public static class UIController
 
 		Action<OptionUIBuilder> onBuildUIHandler = (OptionUIBuilder builder) =>
 		{
-			OptVLayout mainLayout = builder.GetPreBuild<OptVLayout>("vlayout01");
-			if (mainLayout != null && mainLayout.Base != null)
-			{
-				var topicClone = mainLayout.Base.transform.Find("TopicDefault(Clone)");
-				if (topicClone != null)
-				{
-					var topicTransform = topicClone.Find("topic");
-					if (topicTransform != null)
-					{
-						var topicText = topicTransform.GetComponent<UnityEngine.UI.Text>();
-						if (topicText != null)
-						{
-							topicText.text = configPanelTitle;
-						}
-					}
-				}
-			}
-
-			OptVLayout optionsLayout = builder.GetPreBuild<OptVLayout>("vlayout02");
-			if (optionsLayout != null && optionsLayout.Base != null)
-			{
-				var topicClone = optionsLayout.Base.transform.Find("TopicDefault(Clone)");
-				if (topicClone != null)
-				{
-					var topicTransform = topicClone.Find("topic");
-					if (topicTransform != null)
-					{
-						var topicText = topicTransform.GetComponent<UnityEngine.UI.Text>();
-						if (topicText != null)
-						{
-							topicText.text = ModLocalization.Get(ModLocalization.InGameOptionsTitle);
-						}
-					}
-				}
-			}
-
-			OptVLayout importLayout = builder.GetPreBuild<OptVLayout>("vlayout03");
-			if (importLayout != null && importLayout.Base != null)
-			{
-				var topicClone = importLayout.Base.transform.Find("TopicDefault(Clone)");
-				if (topicClone != null)
-				{
-					var topicTransform = topicClone.Find("topic");
-					if (topicTransform != null)
-					{
-						var topicText = topicTransform.GetComponent<UnityEngine.UI.Text>();
-						if (topicText != null)
-						{
-							topicText.text = ModLocalization.Get(ModLocalization.ImportSettingsTitle);
-						}
-					}
-				}
-			}
+			SetSectionTitle(builder, "vlayout01", configPanelTitle);
+			SetSectionTitle(builder, "vlayout02", ModLocalization.Get(ModLocalization.InGameOptionsTitle));
+			SetSectionTitle(builder, "vlayout03", ModLocalization.Get(ModLocalization.MainImportSettingsTitle));
+			SetSectionTitle(builder, "vlayoutSpecial", ModLocalization.Get(ModLocalization.SpecialImportSettingsTitle));
 
 			ModLocalization.RegisterUIToggles(builder);
 		};
 
 		controller.OnBuildUI += onBuildUIHandler;
+	}
+
+	private static void SetSectionTitle(OptionUIBuilder builder, string layoutId, string titleText)
+	{
+		OptVLayout layout = builder.GetPreBuild<OptVLayout>(layoutId);
+		if (layout?.Base == null)
+			return;
+		Transform topicClone = layout.Base.transform.Find("TopicDefault(Clone)");
+		Transform topicTransform = topicClone?.Find("topic");
+		var topicText = topicTransform?.GetComponent<UnityEngine.UI.Text>();
+		if (topicText != null)
+			topicText.text = titleText;
 	}
 
 	public static void RegisterImportToggle(OptionUIBuilder builder, string toggleId, string contentId, string tooltipId, BepInEx.Configuration.ConfigEntry<bool> configEntry)

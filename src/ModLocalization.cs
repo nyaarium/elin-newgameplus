@@ -35,7 +35,8 @@ public static class ModLocalization
 	public const string ExportSuccess = "ExportSuccess";
 	public const string ExportCurrentSave = "ExportCurrentSave";
 	public const string InGameOptionsTitle = "InGameOptionsTitle";
-	public const string ImportSettingsTitle = "ImportSettingsTitle";
+	public const string MainImportSettingsTitle = "MainImportSettingsTitle";
+	public const string SpecialImportSettingsTitle = "SpecialImportSettingsTitle";
 	public const string DebugInventorySlots = "DebugInventorySlots";
 	public const string DebugImport = "DebugImport";
 	public const string ModTooltip = "ModTooltip";
@@ -515,12 +516,22 @@ public static class ModLocalization
 		},
 		new LocalizedString
 		{
-			Key = "ImportSettingsTitle",
+			Key = "MainImportSettingsTitle",
 			Translations = new Dictionary<string, string>
 			{
-				{ "EN", "Import Settings" },
-				{ "JP", "インポート設定" },
-				{ "CN", "导入设置" }
+				{ "EN", "Main Import Settings" },
+				{ "JP", "メインインポート設定" },
+				{ "CN", "主要导入设置" }
+			}
+		},
+		new LocalizedString
+		{
+			Key = "SpecialImportSettingsTitle",
+			Translations = new Dictionary<string, string>
+			{
+				{ "EN", "Special Import Settings" },
+				{ "JP", "特殊インポート設定" },
+				{ "CN", "特殊导入设置" }
 			}
 		},
 		new LocalizedString

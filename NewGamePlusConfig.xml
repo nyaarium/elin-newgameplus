@@ -3,77 +3,82 @@
     <vlayout id="vlayout01" border="true">
         <title>ConfigTitle</title>
 
-        <vlayout id="vlayout03" border="true">
-            <title>ImportSettingsTitle</title>
-            <toggle id="importIncludeToolbarToggle">
-                <contentId>ImportIncludeToolbar</contentId>
-                <tooltip>ImportIncludeToolbarTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeWornEquipmentToggle">
-                <contentId>ImportIncludeWornEquipment</contentId>
-                <tooltip>ImportIncludeWornEquipmentTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeBackpackContentsToggle">
-                <contentId>ImportIncludeBackpackContents</contentId>
-                <tooltip>ImportIncludeBackpackContentsTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeBankToggle">
-                <contentId>ImportIncludeBank</contentId>
-                <tooltip>ImportIncludeBankTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludePlayerLevelToggle">
-                <contentId>ImportIncludePlayerLevel</contentId>
-                <tooltip>ImportIncludePlayerLevelTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeAcquiredFeatsToggle">
-                <contentId>ImportIncludeAcquiredFeats</contentId>
-                <tooltip>ImportIncludeAcquiredFeatsTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeAbilitiesToggle">
-                <contentId>ImportIncludeAbilities</contentId>
-                <tooltip>ImportIncludeAbilitiesTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeAttributesToggle">
-                <contentId>ImportIncludeAttributes</contentId>
-                <tooltip>ImportIncludeAttributesTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeSkillsToggle">
-                <contentId>ImportIncludeSkills</contentId>
-                <tooltip>ImportIncludeSkillsTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludePietyToggle">
-                <contentId>ImportIncludePiety</contentId>
-                <tooltip>ImportIncludePietyTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeKarmaToggle">
-                <contentId>ImportIncludeKarma</contentId>
-                <tooltip>ImportIncludeKarmaTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeFameToggle">
-                <contentId>ImportIncludeFame</contentId>
-                <tooltip>ImportIncludeFameTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeInfluenceToggle">
-                <contentId>ImportIncludeInfluence</contentId>
-                <tooltip>ImportIncludeInfluenceTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeCraftRecipesToggle">
-                <contentId>ImportIncludeCraftRecipes</contentId>
-                <tooltip>ImportIncludeCraftRecipesTooltip</tooltip>
-            </toggle>
-            <toggle id="importIncludeCodexToggle">
-                <contentId>ImportIncludeCodex</contentId>
-                <tooltip>ImportIncludeCodexTooltip</tooltip>
-            </toggle>
-            <toggle id="importCureDiseasesToggle">
-                <contentId>ImportCureDiseases</contentId>
-                <tooltip>ImportCureDiseasesTooltip</tooltip>
-            </toggle>
-            <toggle id="importCureMutationsToggle">
-                <contentId>ImportCureMutations</contentId>
-                <tooltip>ImportCureMutationsTooltip</tooltip>
-            </toggle>
-        </vlayout>
+        <hlayout id="importColumns">
+            <vlayout id="vlayout03" border="true">
+                <title>MainImportSettingsTitle</title>
+                <toggle id="importIncludeToolbarToggle">
+                    <contentId>ImportIncludeToolbar</contentId>
+                    <tooltip>ImportIncludeToolbarTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeWornEquipmentToggle">
+                    <contentId>ImportIncludeWornEquipment</contentId>
+                    <tooltip>ImportIncludeWornEquipmentTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeBackpackContentsToggle">
+                    <contentId>ImportIncludeBackpackContents</contentId>
+                    <tooltip>ImportIncludeBackpackContentsTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeBankToggle">
+                    <contentId>ImportIncludeBank</contentId>
+                    <tooltip>ImportIncludeBankTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludePlayerLevelToggle">
+                    <contentId>ImportIncludePlayerLevel</contentId>
+                    <tooltip>ImportIncludePlayerLevelTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeAcquiredFeatsToggle">
+                    <contentId>ImportIncludeAcquiredFeats</contentId>
+                    <tooltip>ImportIncludeAcquiredFeatsTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeAbilitiesToggle">
+                    <contentId>ImportIncludeAbilities</contentId>
+                    <tooltip>ImportIncludeAbilitiesTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeAttributesToggle">
+                    <contentId>ImportIncludeAttributes</contentId>
+                    <tooltip>ImportIncludeAttributesTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeSkillsToggle">
+                    <contentId>ImportIncludeSkills</contentId>
+                    <tooltip>ImportIncludeSkillsTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludePietyToggle">
+                    <contentId>ImportIncludePiety</contentId>
+                    <tooltip>ImportIncludePietyTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeKarmaToggle">
+                    <contentId>ImportIncludeKarma</contentId>
+                    <tooltip>ImportIncludeKarmaTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeFameToggle">
+                    <contentId>ImportIncludeFame</contentId>
+                    <tooltip>ImportIncludeFameTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeInfluenceToggle">
+                    <contentId>ImportIncludeInfluence</contentId>
+                    <tooltip>ImportIncludeInfluenceTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeCraftRecipesToggle">
+                    <contentId>ImportIncludeCraftRecipes</contentId>
+                    <tooltip>ImportIncludeCraftRecipesTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeCodexToggle">
+                    <contentId>ImportIncludeCodex</contentId>
+                    <tooltip>ImportIncludeCodexTooltip</tooltip>
+                </toggle>
+                <toggle id="importCureDiseasesToggle">
+                    <contentId>ImportCureDiseases</contentId>
+                    <tooltip>ImportCureDiseasesTooltip</tooltip>
+                </toggle>
+                <toggle id="importCureMutationsToggle">
+                    <contentId>ImportCureMutations</contentId>
+                    <tooltip>ImportCureMutationsTooltip</tooltip>
+                </toggle>
+            </vlayout>
+            <vlayout id="vlayoutSpecial" border="true">
+                <title>SpecialImportSettingsTitle</title>
+            </vlayout>
+        </hlayout>
 
         <vlayout id="vlayout02" border="true">
             <title>InGameOptionsTitle</title>
