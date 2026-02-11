@@ -391,7 +391,7 @@ public static class ModLocalization
 			TooltipKey = "ImportIncludeFameTooltip",
 			LabelTranslations = new Dictionary<string, string>
 			{
-				{ "EN", "Includes your fame (Warning: your tax will start high)" },
+				{ "EN", "Include fame (Warning: your tax will start high)" },
 				{ "JP", "名声を含める（注意：税が高く始まります）" },
 				{ "CN", "包含声望（注意：税款会从较高开始）" }
 			},
