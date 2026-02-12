@@ -45,7 +45,7 @@ public static class DebugLogger
 		return "\"" + value.ToString().Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 	}
 
-	public static void DebugLog(string location, string message, Dictionary<string, object> data = null, string hypothesisId = null)
+	public static void DebugLog(string location, string message, string hypothesisId = null, Dictionary<string, object> data = null)
 	{
 		try
 		{

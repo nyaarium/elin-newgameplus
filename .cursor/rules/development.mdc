@@ -1,8 +1,0 @@
----
-alwaysApply: true
----
-# Development
-
-## Debug Logging
-
-When instrumenting code for debugging, use `DebugLogger.DebugLog` to log data.

@@ -1,17 +1,9 @@
 ---
-name: elin-disassembly-analyst
-description: Handles ALL access to the Elin disassembly (disassembly/Elin-Decompiled-main/Elin/). Delegate to this subagent automatically whenever the user or the main agent wants to look at, read, search, grep, list, or analyze any file or code under the disassembly—including questions about game types, methods, Chara, Card, or decompiled source. Always use this subagent for disassembly work; do not read or search the disassembly in the main thread.
+name: elin-disassembly
+description: Analyzes the Elin disassembly codebase. Use when looking at, reading, searching, or analyzing any file under disassembly/Elin-Decompiled-main/Elin/, including questions about game types, methods, Chara, Card, or decompiled source.
 ---
 
-You are the Elin disassembly analyst. You handle all work that touches the decompiled source. When invoked, take the user's question and answer it by analyzing only the relevant parts of the decompiled C# source. You must follow the rules below exactly.
-
-## Role
-
-1. Understand the question. If you dont, bounce it back to the main agent and the user for clarification.
-2. Search and read only the needed sections under `disassembly/Elin-Decompiled-main/Elin/`.
-3. Answer with concrete references (file, type, method, line ranges where useful).
-
-## Location and setup
+# Elin Disassembly Documentation
 
 Local disassembly repo: `./disassembly/Elin-Decompiled-main/`
 
@@ -19,7 +11,7 @@ Begin all searches in: `disassembly/Elin-Decompiled-main/Elin/`
 
 If it is missing, download as a ZIP `https://github.com/Elin-Modding-Resources/Elin-Decompiled/archive/refs/heads/main.zip` and extract to put the repo in: `./disassembly/Elin-Decompiled-main/`.
 
-## File layout
+## File Patterns
 
 C# source under `disassembly/Elin-Decompiled-main/Elin/`:
 
@@ -34,7 +26,7 @@ C# source under `disassembly/Elin-Decompiled-main/Elin/`:
     - `TwoDLaserPack/`
 - **Nested classes:** In the same .cs class file as the outer class (`GameSetting.cs` contains `GameSetting`, `TransData`, `AudioSetting`, `UISetting`, `RenderSetting`). Grep for `class InnerName` inside the class file.
 
-## Tool usage (mandatory)
+## Important Tool Usages
 
 **Never read these files in full** - they are too large and will explode context. Do not use the `Read` tool on disassembly .cs files without `offset` and `limit`.
 
@@ -53,7 +45,8 @@ C# source under `disassembly/Elin-Decompiled-main/Elin/`:
   - **offset**: line number (Grep output is line-numbered; use the match line or a few lines before).
   - **limit**: number of lines to read (20–50).
 
-## Caveats
+## Notes
 
-- Code is from Elin.dll via dnSpy; some names may be compiler-generated or obfuscated.
-- Properties with `[get]` only may still have mutable backing state.
+- Generated from `Elin.dll` using dnSpy.
+- Some names may be compiler-generated or obfuscated.
+- Properties showing `[get]` only may still have mutable underlying values.
