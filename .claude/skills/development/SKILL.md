@@ -31,6 +31,10 @@ Note: Git Bash requires exactly two slashes (`//c`) due to path mangling behavio
 ./build.sh
 ```
 
+## Version Bumping
+
+When version bumping, update the 4 instances in: `Properties\AssemblyInfo.cs`, `src\NewGamePlus.cs`, and `package.xml`.
+
 ## Debugging Approach
 
 When debugging issues, follow this systematic approach to avoid drowning the codebase in unnecessary logging.

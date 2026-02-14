@@ -1,6 +1,7 @@
 ---
 name: elin-disassembly-analyst
 description: Handles ALL access to the Elin disassembly (disassembly/Elin-Decompiled-main/Elin/). Delegate to this subagent automatically whenever the user or the main agent wants to look at, read, search, grep, list, or analyze any file or code under the disassembly—including questions about game types, methods, Chara, Card, or decompiled source. Always use this subagent for disassembly work; do not read or search the disassembly in the main thread.
+skills: elin-disassembly
 # tools: ["Read", "Grep", "Glob"] # Omit to allow all tools
 ---
 
