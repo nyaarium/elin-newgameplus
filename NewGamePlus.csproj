@@ -79,10 +79,16 @@
     </Reference>
   </ItemGroup>
 
+  <!-- Deploy path: set by build script via -p:DeployPath=... -->
+  <PropertyGroup>
+    <PackageDir>$(DeployPath)/Package/NewGamePlus/</PackageDir>
+  </PropertyGroup>
+
+  <Target Name="RequireDeployPath" BeforeTargets="Build">
+    <Error Condition="'$(DeployPath)' == ''" Text="DeployPath is required. Build using build.bat or build.sh." />
+  </Target>
+
   <Target Name="CopyToPackage" AfterTargets="Build">
-    <PropertyGroup>
-      <PackageDir>S:\Steam\steamapps\common\Elin\Package\NewGamePlus\</PackageDir>
-    </PropertyGroup>
     <Copy Condition="Exists('$(PackageDir)')" SourceFiles="$(TargetPath)" DestinationFolder="$(PackageDir)" SkipUnchangedFiles="true" />
     <Copy Condition="Exists('$(PackageDir)')" SourceFiles="$(ProjectDir)NewGamePlusConfig.xml" DestinationFolder="$(PackageDir)" SkipUnchangedFiles="true" />
     <Copy Condition="Exists('$(PackageDir)')" SourceFiles="$(ProjectDir)package.xml" DestinationFolder="$(PackageDir)" SkipUnchangedFiles="true" />
