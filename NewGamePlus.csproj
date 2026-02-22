@@ -6,11 +6,18 @@
     <LangVersion>12.0</LangVersion>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 
-    <!-- Default game install path by OS; override with -p:ELIN_INSTALL_PATH=... -->
+    <!-- Install and deploy path by OS -->
     <ELIN_INSTALL_PATH Condition="'$(OS)' == 'Windows_NT'">S:\Steam\steamapps\common\Elin</ELIN_INSTALL_PATH>
     <ELIN_INSTALL_PATH Condition="'$(OS)' != 'Windows_NT'">/mnt/elin</ELIN_INSTALL_PATH>
-
+    <DeployPath>$(ELIN_INSTALL_PATH)</DeployPath>
   </PropertyGroup>
+
+  <Target Name="ValidateEnvironment" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(ELIN_INSTALL_PATH)' == ''" Text="ELIN_INSTALL_PATH is not set." />
+    <Error Condition="!Exists('$(ELIN_INSTALL_PATH)')" Text="ELIN_INSTALL_PATH directory does not exist: $(ELIN_INSTALL_PATH)" />
+    <Error Condition="!Exists('$(ELIN_INSTALL_PATH)/Elin_Data/Managed')" Text="Elin Managed DLLs not found at: $(ELIN_INSTALL_PATH)/Elin_Data/Managed" />
+    <Error Condition="!Exists('$(ELIN_INSTALL_PATH)/BepInEx/core')" Text="BepInEx core DLLs not found at: $(ELIN_INSTALL_PATH)/BepInEx/core" />
+  </Target>
 
   <ItemGroup>
     <Compile Remove="disassembly/**" />
@@ -80,14 +87,9 @@
     </Reference>
   </ItemGroup>
 
-  <!-- Deploy path: set by build script via -p:DeployPath=... -->
   <PropertyGroup>
     <PackageDir>$(DeployPath)/Package/NewGamePlus/</PackageDir>
   </PropertyGroup>
-
-  <Target Name="RequireDeployPath" BeforeTargets="Build">
-    <Error Condition="'$(DeployPath)' == ''" Text="DeployPath is required. Build using build.bat or build.sh." />
-  </Target>
 
   <Target Name="CopyToPackage" AfterTargets="Build">
     <Copy Condition="Exists('$(PackageDir)')" SourceFiles="$(TargetPath)" DestinationFolder="$(PackageDir)" SkipUnchangedFiles="true" />
