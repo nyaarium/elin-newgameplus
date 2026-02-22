@@ -10,7 +10,7 @@ services:
     volumes:
       # Workspace
       - ..:/workspace/elin-newgameplus:cached
-      - /mnt/s/Steam/steamapps/common/Elin:/mnt/elin
+      - /mnt/s/Steam/steamapps/common/Elin:/mnt/elin:cached
       # Home
       - ../volumes/home:/home/vscode:cached
       # Additional scripts
