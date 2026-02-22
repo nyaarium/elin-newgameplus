@@ -6,8 +6,9 @@
     <LangVersion>12.0</LangVersion>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 
-    <!-- Set this to your Elin install path -->
-    <ELIN_INSTALL_PATH>S:\Steam\steamapps\common\Elin</ELIN_INSTALL_PATH>
+    <!-- Default game install path by OS; override with -p:ELIN_INSTALL_PATH=... -->
+    <ELIN_INSTALL_PATH Condition="'$(OS)' == 'Windows_NT'">S:\Steam\steamapps\common\Elin</ELIN_INSTALL_PATH>
+    <ELIN_INSTALL_PATH Condition="'$(OS)' != 'Windows_NT'">/mnt/elin</ELIN_INSTALL_PATH>
 
   </PropertyGroup>
 

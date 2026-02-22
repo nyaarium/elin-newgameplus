@@ -1,0 +1,18 @@
+services:
+  dev:
+    tty: true
+    hostname: devcontainer
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.devcontainer
+      args:
+        PROJECT_NAME: elin-newgameplus
+    volumes:
+      # Workspace
+      - ..:/workspace/elin-newgameplus:cached
+      - /mnt/s/Steam/steamapps/common/Elin:/mnt/elin
+      # Home
+      - ../volumes/home:/home/vscode:cached
+      # Additional scripts
+      - ~/.cursor/mcp.json:/home/vscode/.cursor/mcp.json:ro
+      - ~/scripts:/home/vscode/scripts:ro
