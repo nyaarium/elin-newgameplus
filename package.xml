@@ -5,7 +5,7 @@
   <author>nyaarium</author>
   <tags>General</tags>
   <loadPriority>100</loadPriority>
-  <version>1.2.1</version>
+  <version>1.2.2</version>
   <description>
     [h2]New Game++[/h2]
 
@@ -95,6 +95,13 @@
     [/list]
 
     [h2]Updates[/h2]
+
+    [b]2026.02.23[/b]
+
+    [list]
+    [*]Captured ranged weapons' mod slots on export.
+    [*]Fixed an issue where weaker races like Fairy would disappear equipment when importing (they are too weak to equip heavy stuff)
+    [/list]
 
     [b]2026.02.09[/b]
 
