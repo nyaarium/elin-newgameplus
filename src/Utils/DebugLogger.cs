@@ -49,7 +49,7 @@ public static class DebugLogger
 	{
 		try
 		{
-			var logPath = @"s:\Steam\steamapps\common\Elin\NewGamePlus\.cursor\debug.log";
+			var logPath = @"\\wsl$\Ubuntu-24.04\home\nyaarium\elin-newgameplus\.cursor\debug.log";
 			var logDir = Path.GetDirectoryName(logPath);
 			if (!Directory.Exists(logDir))
 			{
