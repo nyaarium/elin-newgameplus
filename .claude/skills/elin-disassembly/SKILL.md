@@ -3,50 +3,23 @@ name: elin-disassembly
 description: Analyzes the Elin disassembly codebase. Use when looking at, reading, searching, or analyzing any file under disassembly/Elin-Decompiled-main/Elin/, including questions about game types, methods, Chara, Card, or decompiled source.
 ---
 
-# Elin Disassembly Documentation
+# Elin Disassembly
 
-Local disassembly repo: `./disassembly/Elin-Decompiled-main/`
+All access to `disassembly/Elin-Decompiled-main/Elin/` goes through the `elin-disassembly-analyst` subagent, using whichever tool your environment provides: `Task`, `mcp_task`, `runSubagent`. Always delegate to subagent rather than reading it yourself.
 
-Begin all searches in: `disassembly/Elin-Decompiled-main/Elin/`
+## When to invoke
 
-If it is missing, download as a ZIP `https://github.com/Elin-Modding-Resources/Elin-Decompiled/archive/refs/heads/main.zip` and extract to put the repo in: `./disassembly/Elin-Decompiled-main/`.
+Any time you need to:
 
-## File Patterns
+- Look up a type, method, field, or property in the decompiled source
+- Trace logic or inheritance across files
+- Verify how the game implements a specific behavior
+- Answer any question — yours or the user's — that requires inspecting `.cs` files under the disassembly
 
-C# source under `disassembly/Elin-Decompiled-main/Elin/`:
+## How to invoke
 
-- **Filename:** `{ClassName}.cs` (no prefix/suffix).
-  - Type files: `Chara.cs`, `Card.cs`, etc. (classes, structs, enums, interfaces).
-  - Immediate directories:
-    - `Algorithms/`
-    - `Assets/`
-    - `Plugins.basecore/`
-    - `Plugins.UI/`
-    - `Properties/`
-    - `TwoDLaserPack/`
-- **Nested classes:** In the same .cs class file as the outer class (`GameSetting.cs` contains `GameSetting`, `TransData`, `AudioSetting`, `UISetting`, `RenderSetting`). Grep for `class InnerName` inside the class file.
+Pass a clear, specific prompt — a type name, method, or behavior you need to understand. The subagent is stateless and can't ask follow-up questions, so be thorough: specify the type or method you're targeting, what you want to know about it, and what you need back (signature, line range, explaination prose, etc.). You don't need to specify file paths or grep patterns; the analyst handles navigation internally.
 
-## Important Tool Usages
+## Using the result
 
-**Never read these files in full** - they are too large and will explode context. Do not use the `Read` tool on disassembly .cs files without `offset` and `limit`.
-
-**The disassembly directory is git-ignored.** From workspace root, `LS` and `Glob` will not show it. You must start from `disassembly/Elin-Decompiled-main/Elin/` or a subdirectory for any listing or file search.
-
-- **List files**: Use the `LS` tool. Do not list from workspace root expecting to see the disassembly.
-  - **target_directory**: `disassembly/Elin-Decompiled-main/Elin/` (or a subpath).
-- **Targeted greps**: Use the `Grep` tool. **path** must be under the disassembly or a subdirectory; it will not appear from workspace root.
-  - **path**: `disassembly/Elin-Decompiled-main/Elin/Chara.cs` or `disassembly/Elin-Decompiled-main/Elin/` (file or dir).
-  - **pattern**: any regex (`public.*\w+\(`).
-- **Search by file name**: Use the `Glob` tool. You must set the directory to the disassembly; it will not appear in results if you search from workspace root.
-  - **target_directory**: `disassembly/Elin-Decompiled-main/Elin/`.
-  - **glob_pattern**: the pattern of what to search for (`*Chara*.cs`).
-- **Section reads only**: Use the `Read` tool when you must see a method body.
-  - **path**: the file path.
-  - **offset**: line number (Grep output is line-numbered; use the match line or a few lines before).
-  - **limit**: number of lines to read (20–50).
-
-## Notes
-
-- Generated from `Elin.dll` using dnSpy.
-- Some names may be compiler-generated or obfuscated.
-- Properties showing `[get]` only may still have mutable underlying values.
+The analyst returns findings with file, type, method, and line references. Reason over those results freely — use them to inform code you're writing, answer the user, or feed into further subagent calls.
