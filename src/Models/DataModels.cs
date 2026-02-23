@@ -27,6 +27,7 @@ public class ThingData
 	[DataMember] public int? slotIndex { get; set; }  // For multi-slot items (rings, hands) - distinguishes which slot
 	[DataMember] public int[] ints { get; set; }  // Full _ints array (contains type, use count, and other item-specific data)
 	[DataMember] public Dictionary<int, int> mapInt { get; set; }  // mapInt dictionary (contains c_dyeMat[3], c_charges[7], c_ammo[27], etc.)
+	[DataMember] public List<int> sockets { get; set; }  // Ranged weapon mod sockets: count = list length; 0 = empty, else elementId*1000+encLv
 }
 
 [DataContract]

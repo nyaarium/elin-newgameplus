@@ -55,6 +55,13 @@ public static class ThingUtils
 			mapIntDict = new Dictionary<int, int>(cardThing.mapInt);
 		}
 
+		// Export mod sockets for ranged weapons (guns/bows): slot count = list length, 0 = empty, else elementId*1000+encLv
+		List<int> socketsList = null;
+		if (cardThing.IsRangedWeapon && cardThing.sockets != null && cardThing.sockets.Count > 0)
+		{
+			socketsList = new List<int>(cardThing.sockets);
+		}
+
 		return new ThingData
 		{
 			id = ((Card)thing).id,
@@ -66,7 +73,8 @@ public static class ThingUtils
 			slotIndex = slotIndex,
 			containerUid = containerUid,
 			ints = intsArray,
-			mapInt = mapIntDict
+			mapInt = mapIntDict,
+			sockets = socketsList
 		};
 	}
 
@@ -167,6 +175,12 @@ public static class ThingUtils
 			{
 				card.mapInt[kvp.Key] = kvp.Value;
 			}
+		}
+
+		// Restore mod sockets for ranged weapons so slot count and embedded attachments are preserved
+		if (thingData.sockets != null && thingData.sockets.Count > 0 && card.IsRangedWeapon)
+		{
+			card.sockets = new List<int>(thingData.sockets);
 		}
 
 		return card;
