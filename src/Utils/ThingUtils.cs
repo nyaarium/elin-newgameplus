@@ -107,13 +107,18 @@ public static class ThingUtils
 			card.isCrafted = true;
 		}
 
-		// Restore full _ints array FIRST (before MakeRefFrom/ChangeMaterial which may modify it)
-		// This ensures MakeRefFrom uses the correct array state from export
+		// Restore full _ints array (mirrors game deserialization - _ints is the source of truth)
 		if (thingData.ints != null && thingData.ints.Length > 0)
 		{
-			// Replace entire array - use exported length to preserve exact state
 			card._ints = new int[thingData.ints.Length];
 			Array.Copy(thingData.ints, card._ints, thingData.ints.Length);
+		}
+
+		// Unpack _bits1/_bits2 from _ints (mirrors Card._OnDeserialized - game never calls ChangeMaterial on load)
+		if (card._ints != null && card._ints.Length >= 3)
+		{
+			card._bits1.SetInt(card._ints[0]);
+			card._bits2.SetInt(card._ints[2]);
 		}
 
 		if (!string.IsNullOrEmpty(thingData.refCardId))
@@ -147,22 +152,8 @@ public static class ThingUtils
 			}
 		}
 
-		// ChangeMaterial uses idMaterial from _ints[4], so _ints must be restored first
-		// Apply material AFTER restoring elements to add vSource bonuses
-		// The bracket notation [DV, PV] depends on elements 64 and 65, which need both vBase and vSource
-		if (card._ints != null && card._ints.Length > CardIntsIndices.IdMaterial)
-		{
-			int restoredIdMaterial = card._ints[CardIntsIndices.IdMaterial];
-			if (EClass.sources.materials.map.ContainsKey(restoredIdMaterial))
-			{
-				// Save decay before ChangeMaterial (it sets decay to 0)
-				int savedDecay = card.decay;
-				// Use ChangeMaterial to properly restore material (calls ApplyMaterial and sets dirty flags)
-				card.ChangeMaterial(EClass.sources.materials.map[restoredIdMaterial], ignoreFixedMaterial: true);
-				// Restore decay after ChangeMaterial
-				card.decay = savedDecay;
-			}
-		}
+		// Refresh vSource from material.elementMap (mirrors Card._OnDeserialized - game does NOT call ChangeMaterial on load)
+		card.ApplyMaterialElements(remove: false);
 
 		// Restore mapInt dictionary (contains c_dyeMat[3], c_charges[7], c_ammo[27], etc.)
 		if (thingData.mapInt != null && thingData.mapInt.Count > 0)
