@@ -609,7 +609,7 @@ public static class CharacterImporter
 				}
 				catch (System.Exception)
 				{
-					// Item failed to spawn, continue with next
+					DropAtFeet(c, item);
 				}
 			}
 		}
@@ -649,7 +649,7 @@ public static class CharacterImporter
 					}
 					catch (System.Exception)
 					{
-						// Item failed to spawn, continue with next
+						DropAtFeet(c, dumpData.toolbeltItems[i]);
 					}
 				}
 			}
@@ -665,10 +665,11 @@ public static class CharacterImporter
 					continue;
 				}
 
+				Card spawnedCard = null;
 				try
 				{
 					// Create the item first to check if it's a container and map UIDs
-					Card spawnedCard = ThingUtils.RestoreThingFromData(thingData);
+					spawnedCard = ThingUtils.RestoreThingFromData(thingData);
 					if (spawnedCard == null)
 					{
 						continue;
@@ -690,15 +691,10 @@ public static class CharacterImporter
 				}
 				catch (System.Exception)
 				{
-					// If slot doesn't exist (body part missing), put item in inventory instead
-					try
-					{
-						StorageAuto.SpawnToInventory(c, thingData);
-					}
-					catch (System.Exception)
-					{
-						// Item failed to place in inventory, continue with next
-					}
+					if (spawnedCard != null)
+						DropAtFeet(c, spawnedCard);
+					else
+						DropAtFeet(c, thingData);
 				}
 			}
 		}
@@ -935,17 +931,43 @@ public static class CharacterImporter
 				{
 					if (purseContainer != null)
 					{
-						// Place in purse
 						StorageAuto.SpawnToSubContainer(purseContainer, containerItemData.item);
 					}
 					else
 					{
-						// Dump into inventory
+						// SpawnToInventory uses Pick(), which drops to ground when inventory full
 						StorageAuto.SpawnToInventory(c, containerItemData.item);
 					}
 				}
 			}
 		}
+	}
+
+	/// <summary>
+	/// Drops an item at the character's feet when spawn/equip fails (e.g. weak races like Fairy Weak).
+	/// Uses EClass._zone.AddCard; containers get Install() so they render (game uses AddCard().Install() for placed furniture).
+	/// </summary>
+	private static void DropAtFeet(Chara c, Card card)
+	{
+		if (card == null) return;
+		if (EClass._zone == null || c.pos == null || !c.pos.IsValid) return;
+		// Clear c_equippedSlot so when picked up, ShouldShowOnGrid returns true and invX gets assigned.
+		card.c_equippedSlot = 0;
+		EClass._zone.AddCard(card, c.pos);
+		if (card.IsContainer)
+			card.Install();
+	}
+
+	private static void DropAtFeet(Chara c, ThingData descriptor)
+	{
+		if (descriptor == null) return;
+		Card card = ThingUtils.RestoreThingFromData(descriptor);
+		if (card == null) return;
+		if (EClass._zone == null || c.pos == null || !c.pos.IsValid) return;
+		card.c_equippedSlot = 0;
+		EClass._zone.AddCard(card, c.pos);
+		if (card.IsContainer)
+			card.Install();
 	}
 
 	/// <summary>

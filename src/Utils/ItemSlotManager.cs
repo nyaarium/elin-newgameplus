@@ -369,15 +369,11 @@ public static class StorageFixed
 		}
 
 		if (slot == null)
-		{
 			throw new ArgumentException($"No equipment slot found for elementId {elementId} with slotIndex {slotIndex}");
-		}
 
 		bool result = c.body.Equip(item, slot);
 		if (!result)
-		{
 			throw new InvalidOperationException($"Failed to equip item to elementId {elementId}, slotIndex {slot.index}");
-		}
 
 		return slot.index;
 	}
