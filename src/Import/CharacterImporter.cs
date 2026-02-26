@@ -208,7 +208,8 @@ public static class CharacterImporter
 			{
 				string exportedRaceId = (dumpData.cardIdRace != null && dumpData.cardIdRace.Count > 0) ? dumpData.cardIdRace[0] : null;
 				string exportedJobId = (dumpData.cardIdJob != null && dumpData.cardIdJob.Count > 0) ? dumpData.cardIdJob[0] : null;
-				ImportElementConfig((Card)(object)c, elementsToImport, exportedRaceId, exportedJobId);
+				// Pass Chara directly — no Card wrapping needed here
+				ImportElementConfig(c, elementsToImport, exportedRaceId, exportedJobId);
 			}
 		}
 
@@ -454,97 +455,191 @@ public static class CharacterImporter
 		c.stamina.value = c.stamina.max / 2;
 	}
 
-	private static void ImportElementConfig(Card card, List<ElementData> elements, string exportedRaceId, string exportedJobId)
+	/// <summary>
+	/// Imports character element values (skills, attributes, feats, abilities) from a dump onto a new character.
+	///
+	/// The core challenge: exported vBase values were built on the exported race/job's element landscape.
+	/// If the new character has a different race/job, their vSource contributions differ, so we run a
+	/// dance to strip the exported race/job's contributions, import the raw vBase values, then restore
+	/// the current race/job's contributions.
+	///
+	/// Two degraded-but-explicit paths exist when the dance can't run:
+	///   - DumpMissingRaceOrJob: the dump doesn't contain race/job IDs (old dump format or bad data).
+	///   - SourcesLookupFailed: the dump has race/job IDs but they aren't in current game sources (mod
+	///     version mismatch or removed content).
+	/// In both cases we skip the dance and import raw vBase directly. The result is correct as long as
+	/// the new character's race/job elementMap feats don't overlap with purchased feats in the dump —
+	/// an acceptable trade-off for a degraded data situation.
+	/// </summary>
+	private static void ImportElementConfig(Chara c, List<ElementData> elements, string exportedRaceId, string exportedJobId)
 	{
 		if (elements == null || elements.Count == 0)
 		{
 			return;
 		}
 
-		Chara c = (Chara)(object)card.Thing;
-		if (c == null || string.IsNullOrEmpty(exportedRaceId) || string.IsNullOrEmpty(exportedJobId))
+		// Determine which path we're on before touching anything
+		bool dumpHasRace = !string.IsNullOrEmpty(exportedRaceId);
+		bool dumpHasJob = !string.IsNullOrEmpty(exportedJobId);
+		bool raceInSources = dumpHasRace && EClass.sources.races.map.ContainsKey(exportedRaceId);
+		bool jobInSources = dumpHasJob && EClass.sources.jobs.map.ContainsKey(exportedJobId);
+
+		if (!dumpHasRace || !dumpHasJob)
 		{
-			// Fallback to simple import if not a character or missing race/job info
-			foreach (ElementData elementData in elements)
-			{
-				Element val = ((ElementContainer)card.elements).SetBase(elementData.id, elementData.vBase, elementData.vPotential);
-				val.vExp = elementData.vExp;
-				val.vTempPotential = elementData.vTempPotential;
-			}
+			// Dump is missing race or job ID — old format or corrupted data.
+			// Can't run the dance. Import raw vBase directly.
+			ImportElementsRaw(c, elements);
 			return;
 		}
 
-		// Get current race/job IDs (already set by ImportBio to desired race/class)
+		if (!raceInSources || !jobInSources)
+		{
+			// Dump has race/job IDs but they aren't in the current game's source tables.
+			// Likely a mod version mismatch or removed content. Can't run the dance safely.
+			// Import raw vBase directly.
+			ImportElementsRaw(c, elements);
+			return;
+		}
+
+		// Both exported race and job are known — run the full dance.
+		ImportElementsWithRaceJobDance(c, elements, exportedRaceId, exportedJobId);
+	}
+
+	/// <summary>
+	/// Imports elements by setting vBase directly, with no race/job vSource adjustment.
+	/// Used when exported race/job data is unavailable or unresolvable.
+	/// Calls Apply for Feat elements only when attribute elements are NOT being imported
+	/// directly — when attributes are imported, their exported vBase already contains the
+	/// feat's stat contribution and calling Apply would double-count it.
+	/// </summary>
+	private static void ImportElementsRaw(Chara c, List<ElementData> elements)
+	{
+		bool importingAttributes = elements.Any(e =>
+		{
+			return EClass.sources.elements.map.TryGetValue(e.id, out var src) && src.category == "attribute";
+		});
+
+		foreach (ElementData elementData in elements)
+		{
+			Element val = c.elements.SetBase(elementData.id, elementData.vBase, elementData.vPotential);
+			val.vExp = elementData.vExp;
+			val.vTempPotential = elementData.vTempPotential;
+
+			// Only call Apply when attributes are NOT being imported directly.
+			// When attributes are imported, SetBase(el60, exportedVBase) already captures
+			// the correct value; Apply here would add the feat effect a second time.
+			// When attributes are excluded, Apply is the only way to get the feat's stat
+			// contribution into el60/61/62.
+			if (val is Feat feat && elementData.vBase != 0)
+			{
+				if (!importingAttributes)
+				{
+					feat.Apply(elementData.vBase, c.elements);
+					// Apply sets vPotential = chara.LV, clobbering the exported value. Restore it.
+					val.vPotential = elementData.vPotential;
+				}
+			}
+		}
+	}
+
+	/// <summary>
+	/// Imports elements with a race/job vSource dance to correctly normalize exported vBase values.
+	///
+	/// Exported vBase reflects training on the original race/job. If the new character has a different
+	/// race/job, their race/job may grant different feats via elementMap (which call Apply and modify
+	/// vBase of elements like 60/61/62). The dance:
+	///   1. Removes the current race/job's vSource contributions
+	///   2. Temporarily applies the exported race/job's contributions (so the element landscape matches
+	///      what the original character had when vBase values were built)
+	///   3. Imports vBase values and calls Apply for feats to sync stat elements
+	///   4. Removes the exported race/job's contributions
+	///   5. Restores the current race/job's contributions
+	///
+	/// After the dance, each element's vBase reflects the exported trained value normalized to the
+	/// current race/job, and vSource reflects the current race/job's contribution.
+	/// </summary>
+	private static void ImportElementsWithRaceJobDance(Chara c, List<ElementData> elements, string exportedRaceId, string exportedJobId)
+	{
 		string currentRaceId = ((Card)c).c_idRace;
 		string currentJobId = ((Card)c).c_idJob;
 
-		// Step 1: Remove current race/class bonuses (only affects vSource, vBase stays)
-		if (!string.IsNullOrEmpty(currentRaceId) && EClass.sources.races.map.ContainsKey(currentRaceId))
+		// Step 1: Remove current race/job vSource contributions.
+		// We call ApplyElementMap directly rather than ApplyRace/ApplyJob to avoid their side effects:
+		// ApplyRace also modifies body parts (AddBodyPart/RemoveBodyPart from race.figure), which we
+		// don't want happening four times during the dance. ApplyElementMap is the only part we need.
+		SourceRace.Row currentRaceRow = null;
+		SourceJob.Row currentJobRow = null;
+		if (!string.IsNullOrEmpty(currentRaceId) && EClass.sources.races.map.TryGetValue(currentRaceId, out currentRaceRow))
 		{
-			c.ApplyRace(remove: true);
+			c.elements.ApplyElementMap(c.uid, SourceValueType.Chara, currentRaceRow.elementMap, c.DefaultLV, invert: true, applyFeat: true);
 		}
-		if (!string.IsNullOrEmpty(currentJobId) && EClass.sources.jobs.map.ContainsKey(currentJobId))
+		if (!string.IsNullOrEmpty(currentJobId) && EClass.sources.jobs.map.TryGetValue(currentJobId, out currentJobRow))
 		{
-			c.ApplyJob(remove: true);
-		}
-
-		// Step 3: Apply exported race/class bonuses (adds vSource from exported race/class)
-		if (EClass.sources.races.map.ContainsKey(exportedRaceId))
-		{
-			string tempRace = ((Card)c).c_idRace;
-			((Card)c).c_idRace = exportedRaceId;
-			c._race = null;
-			c.ApplyRace(remove: false);
-			((Card)c).c_idRace = tempRace;
-			c._race = null;
-		}
-		if (EClass.sources.jobs.map.ContainsKey(exportedJobId))
-		{
-			string tempJob = ((Card)c).c_idJob;
-			((Card)c).c_idJob = exportedJobId;
-			c._job = null;
-			c.ApplyJob(remove: false);
-			((Card)c).c_idJob = tempJob;
-			c._job = null;
+			c.elements.ApplyElementMap(c.uid, SourceValueType.Chara, currentJobRow.elementMap, c.DefaultLV, invert: true, applyFeat: true);
 		}
 
-		// Step 2: Import exported vBase values (which include training from exported character)
-		// This sets vBase to the exported values
+		// Step 2: Apply exported race/job vSource contributions.
+		// Again using ApplyElementMap directly to avoid body part side effects.
+		// We already verified exportedRaceId/exportedJobId are in sources before entering this method.
+		SourceRace.Row exportedRaceRow = EClass.sources.races.map[exportedRaceId];
+		SourceJob.Row exportedJobRow = EClass.sources.jobs.map[exportedJobId];
+		c.elements.ApplyElementMap(c.uid, SourceValueType.Chara, exportedRaceRow.elementMap, c.DefaultLV, invert: false, applyFeat: true);
+		c.elements.ApplyElementMap(c.uid, SourceValueType.Chara, exportedJobRow.elementMap, c.DefaultLV, invert: false, applyFeat: true);
+
+		// Step 3: Import exported vBase values and reconcile feat stat effects.
+		//
+		// Whether feat.Apply() needs to run here depends on whether attribute elements
+		// (el60/61/62 — life/mana/stamina) are being imported directly in this same pass.
+		//
+		// When attributes ARE imported:
+		//   SetBase(el60, exportedVBase) already sets el60 to the correct exported value,
+		//   which has the feat contribution baked in. Calling feat.Apply() on top of that
+		//   double-counts the feat's stat effect. Steps 2 and 4 of the dance add/remove the
+		//   exported race/job's feat contributions and cancel each other; SetBase just
+		//   overwrites el60 with the right exported value — no extra Apply needed.
+		//
+		// When attributes are NOT imported:
+		//   SetBase is never called for el60/61/62, so feat.Apply() is the only way to
+		//   get the feat's stat contribution into those elements. Without it, el60 stays at
+		//   whatever the dance left it (typically 0 after steps 4/5 if the current race/job
+		//   doesn't grant the feat), and the strip block would then over-subtract.
+		bool importingAttributes = elements.Any(e =>
+		{
+			return EClass.sources.elements.map.TryGetValue(e.id, out var src) && src.category == "attribute";
+		});
+
 		foreach (ElementData elementData in elements)
 		{
-			Element val = ((ElementContainer)card.elements).SetBase(elementData.id, elementData.vBase, elementData.vPotential);
+			Element val = c.elements.SetBase(elementData.id, elementData.vBase, elementData.vPotential);
 			val.vExp = elementData.vExp;
 			val.vTempPotential = elementData.vTempPotential;
+
+			// Only call Apply when attributes are NOT being imported directly.
+			// See block comment above for the full reasoning.
+			if (val is Feat feat && elementData.vBase != 0)
+			{
+				if (!importingAttributes)
+				{
+					feat.Apply(elementData.vBase, c.elements);
+					// Apply sets vPotential = chara.LV, clobbering the exported value. Restore it.
+					val.vPotential = elementData.vPotential;
+				}
+			}
 		}
 
-		// Step 3: Remove exported race/class bonuses
-		if (EClass.sources.races.map.ContainsKey(exportedRaceId))
-		{
-			string tempRace = ((Card)c).c_idRace;
-			((Card)c).c_idRace = exportedRaceId;
-			c._race = null;
-			c.ApplyRace(remove: true);
-			((Card)c).c_idRace = tempRace;
-			c._race = null;
-		}
-		if (EClass.sources.jobs.map.ContainsKey(exportedJobId))
-		{
-			string tempJob = ((Card)c).c_idJob;
-			((Card)c).c_idJob = exportedJobId;
-			c._job = null;
-			c.ApplyJob(remove: true);
-			((Card)c).c_idJob = tempJob;
-			c._job = null;
-		}
+		// Step 4: Remove exported race/job vSource contributions.
+		c.elements.ApplyElementMap(c.uid, SourceValueType.Chara, exportedRaceRow.elementMap, c.DefaultLV, invert: true, applyFeat: true);
+		c.elements.ApplyElementMap(c.uid, SourceValueType.Chara, exportedJobRow.elementMap, c.DefaultLV, invert: true, applyFeat: true);
 
-		// Step 4: Restore current race/class bonuses (desired race/class from ImportBio)
-		if (!string.IsNullOrEmpty(currentRaceId) && EClass.sources.races.map.ContainsKey(currentRaceId))
+		// Step 5: Restore current race/job vSource contributions.
+		// currentRaceRow/currentJobRow were looked up in step 1; reuse them here.
+		if (currentRaceRow != null)
 		{
-			c.ApplyRace(remove: false);
+			c.elements.ApplyElementMap(c.uid, SourceValueType.Chara, currentRaceRow.elementMap, c.DefaultLV, invert: false, applyFeat: true);
 		}
-		if (!string.IsNullOrEmpty(currentJobId) && EClass.sources.jobs.map.ContainsKey(currentJobId))
+		if (currentJobRow != null)
 		{
-			c.ApplyJob(remove: false);
+			c.elements.ApplyElementMap(c.uid, SourceValueType.Chara, currentJobRow.elementMap, c.DefaultLV, invert: false, applyFeat: true);
 		}
 	}
 
