@@ -40,6 +40,7 @@ RUN apt update && apt install -y \
 	uuid \
 	vim \
 	wget \
+	yq \
 	zip \
 	&& apt autoremove --purge -y \
 	&& apt clean -y && rm -rf /var/lib/apt/lists/*
