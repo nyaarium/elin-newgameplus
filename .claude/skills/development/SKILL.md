@@ -74,7 +74,7 @@ DebugLogger.DebugLog(
 )
 ```
 
-**Output:** Writes to `S:\Steam\steamapps\common\Elin\NewGamePlus\.cursor\debug.log` (under the Steam game path). You can read the file as `.cursor/debug.log` from this workspace.
+**Output:** Writes to `S:\Steam\steamapps\common\Elin\NewGamePlus\.cursor\debug-{sessionId}.log` (under the Steam game path). You can read the file as `.cursor/debug-{sessionId}.log` from this workspace.
 
 **Format:** One JSON object per line (NDJSON). Each line has `id`, `timestamp` (ms since Unix epoch UTC), `location`, `message`, `data` (or `{}`), and optionally `hypothesisId` and `runId`.
 
@@ -82,7 +82,7 @@ DebugLogger.DebugLog(
 
 ### Example Usage
 
-Instrumentation writes NDJSON (one JSON object per line) to `.cursor/debug.log`. For Cursor debugger to show entries, each line must include: **id**, **timestamp**, **location**, **message**, **data** (object). Optional: **runId**, **hypothesisId**, **sessionId**.
+Instrumentation writes NDJSON (one JSON object per line) to `.cursor/debug-{sessionId}.log`. For Cursor debugger to show entries, each line must include: **id**, **timestamp**, **location**, **message**, **data** (object). Optional: **runId**, **hypothesisId**, **sessionId**.
 
 ```csharp
 // #region agent log
