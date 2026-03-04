@@ -23,11 +23,11 @@ internal static class TrySetAct_Patch
 
 				Act debugAct = (Act)new DynamicAct(debugText, debugExportAction, false)
 				{
-					id = debugText,
+					id = debugText,  // Acts are deduplicated by id; using the display string avoids collisions with other mods
 					dist = 1,
 					isHostileAct = false,
 					localAct = true,
-					cursor = ((CursorSystem.Arrow == null) ? null : null),
+					cursor = ((CursorSystem.Arrow == null) ? null : null),  // Decompiler artifact - always null
 					canRepeat = () => false
 				};
 				p.TrySetAct(debugAct, (Card)null);

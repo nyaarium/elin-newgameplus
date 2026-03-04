@@ -29,11 +29,12 @@ public class NewGamePlus : BaseUnityPlugin
 
 	public static void ExportCharacter(Chara c)
 	{
-		// Use unified export function
 		ItemExportResult itemResult = CharacterExporter.ExportAllItems(c);
 
 		CharacterDumpData dumpData = new CharacterDumpData
 		{
+			// c_idPortrait and similar fields are stored as object and may be a bare string or an IEnumerable<string>.
+			// The is-string branch handles the common case; Cast handles the collection case.
 			cardIdPortrait = ((Card)c).c_idPortrait is string strPortrait ? new List<string> { strPortrait } : ((Card)c).c_idPortrait?.Cast<string>().ToList() ?? new List<string>(),
 			cardIdRace = ((Card)c).c_idRace is string strRace ? new List<string> { strRace } : ((Card)c).c_idRace?.Cast<string>().ToList() ?? new List<string>(),
 			cardIdJob = ((Card)c).c_idJob is string strJob ? new List<string> { strJob } : ((Card)c).c_idJob?.Cast<string>().ToList() ?? new List<string>(),

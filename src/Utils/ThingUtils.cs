@@ -78,7 +78,9 @@ public static class ThingUtils
 		};
 	}
 
-	// Restore ThingData descriptor to Card (inverse of CreateThingData)
+	/// <summary>
+	/// Reconstructs a Card from a <see cref="ThingData"/> descriptor. Inverse of <see cref="CreateThingData"/>.
+	/// </summary>
 	public static Card RestoreThingFromData(ThingData thingData)
 	{
 		if (thingData == null) return null;

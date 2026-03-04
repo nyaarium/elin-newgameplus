@@ -4,11 +4,13 @@ using System.Linq;
 
 namespace NewGamePlus;
 
-// The 5 slots next to equipment that can hold any item (purses, backpacks, etc.)
-// Internally the game calls this container "toolbelt" but we call them "Accessory Slots"
+/// <summary>
+/// Manages the 5 slots next to equipment that can hold any item (purses, backpacks, etc.).
+/// Internally the game calls this container "toolbelt" but we call them "Accessory Slots".
+/// </summary>
 public static class ItemSlotManager
 {
-	// --- Slot Element IDs (from SLOT.cs) ---
+	/// <summary>Slot element IDs from SLOT.cs, used to identify body equipment slots.</summary>
 	public static class BodySlot
 	{
 		public const int Head = 30;
@@ -29,23 +31,25 @@ public static class ItemSlotManager
 		public const int AccessorySlot = 45;       // Accessory row (light sources, necklaces, rings)
 	}
 
-	// --- Inventory Y Position (invY) ---
+	/// <summary>Inventory Y position constants (<c>invY</c>) used to distinguish toolbar from inventory.</summary>
 	public static class InvY
 	{
 		public const int Inventory = 0;
 		public const int Toolbar = 1;
 	}
 
-	// --- Container Identifiers ---
+	/// <summary>Container ID strings used to identify special containers by their card ID.</summary>
 	public static class ContainerId
 	{
 		public const string AccessoryContainer = "toolbelt";  // The 5-slot container
 	}
 
-	// Slot counts (game has 2 hotbar pages × 10 slots = 20)
+	/// <summary>Total toolbar slots across 2 hotbar pages × 10 slots each.</summary>
 	public const int ToolbarSlotCount = 20;
+	/// <summary>Number of accessory slots in the toolbelt container.</summary>
 	public const int AccessorySlotCount = 5;
-	public const int PlayerInventoryMaxSlots = 35; // Player's main inventory has 35 slots (0-34)
+	/// <summary>Player's main inventory slot count (slots 0-34).</summary>
+	public const int PlayerInventoryMaxSlots = 35;
 
 	// Valid body slot element IDs (excluding special slots like backpack/accessory)
 	private static readonly HashSet<int> ValidBodySlotElementIds = new HashSet<int>
@@ -61,13 +65,11 @@ public static class ItemSlotManager
 		BodySlot.Foot,
 	};
 
-	// Get all valid body slot element IDs (excluding special slots like backpack/accessory)
 	public static IEnumerable<int> GetValidBodySlotElementIds()
 	{
 		return ValidBodySlotElementIds;
 	}
 
-	// Get the toolbelt container (id="toolbelt")
 	public static Card GetToolbeltContainer(Chara c)
 	{
 		// Search all things for container with id "toolbelt"
@@ -89,7 +91,7 @@ public static class ItemSlotManager
 	}
 }
 
-// Slot classification enum
+/// <summary>Classifies where an item is located relative to a character.</summary>
 public enum ItemLocation
 {
 	Unknown,
@@ -101,10 +103,8 @@ public enum ItemLocation
 	NonPlayer          // Not belonging to player
 }
 
-// Item classification helper
 public static class ItemLocationHelper
 {
-	// Determine where an item is located
 	public static ItemLocation ClassifyItem(Thing item, Chara owner)
 	{
 		if (item == null || owner == null) return ItemLocation.Unknown;
@@ -133,21 +133,19 @@ public static class ItemLocationHelper
 		return ItemLocation.NonPlayer;
 	}
 
-	// Check if item is in toolbar
 	public static bool IsInToolbar(Thing item, Chara owner)
 	{
 		if (item == null || owner == null) return false;
 		return item.invY == ItemSlotManager.InvY.Toolbar && item.parent == owner;
 	}
 
-	// Check if item is equipped
 	public static bool IsEquipped(Thing item, Chara owner)
 	{
 		if (item == null || owner == null) return false;
 		return owner.body.slots.Any(s => s.thing == item);
 	}
 
-	// Check if item is in toolbelt container (container id="toolbelt", not slot 45)
+	/// <summary>Returns true if the item is inside the toolbelt container (id="toolbelt"), not body slot 45.</summary>
 	public static bool IsInAccessorySlot(Thing item)
 	{
 		if (item == null || item.parent == null) return false;
@@ -155,8 +153,7 @@ public static class ItemLocationHelper
 		return parentCard != null && parentCard.id == ItemSlotManager.ContainerId.AccessoryContainer;
 	}
 
-	// Check if item is in a container that exists on the player
-	// Containers can be placed in toolbelt, in inventory, etc. They're not "worn", they just exist
+	/// <summary>Returns true if the item is inside a container (purse, backpack, etc.) that exists on the player. Containers are not worn - they are carried.</summary>
 	public static bool IsInContainer(Thing item, Chara owner)
 	{
 		if (item == null || item.parent == null || owner == null) return false;
@@ -196,7 +193,6 @@ public static class ItemLocationHelper
 		return false;
 	}
 
-	// Check if item is in inventory (35-slot player inventory directly on character)
 	private static bool IsInInventory(Thing item, Chara owner)
 	{
 		if (item == null || owner == null) return false;
@@ -205,13 +201,15 @@ public static class ItemLocationHelper
 	}
 }
 
-// Auto-placement storage manager (Inventory and Subcontainers)
-// Handles storage that supports auto-placement - game decides where items go
+/// <summary>
+/// Handles auto-placement storage (inventory and subcontainers) where the game decides item placement.
+/// </summary>
 public static class StorageAuto
 {
-	// Insert item into inventory (35-slot player inventory directly on character) - auto-placement
-	// Returns the slot (invX) it was placed into, or -1 if failed/dropped to ground
-	// Uses Pick() which automatically handles slot assignment via GetDest/AddThing
+	/// <summary>
+	/// Inserts an item into the character's inventory. Returns the slot (<c>invX</c>) it was placed into, or -1 if it was dropped to the ground (inventory full).
+	/// Uses <c>Pick()</c>, which handles slot assignment via <c>GetDest</c>/<c>AddThing</c>.
+	/// </summary>
 	public static int InsertToInventory(Chara c, Thing item)
 	{
 		if (item == null) return -1;
@@ -233,8 +231,7 @@ public static class StorageAuto
 		return -1;
 	}
 
-	// Insert item into a subcontainer (purse, etc.) - auto-placement
-	// Returns the slot (invX) it was placed into, or -1 if failed
+	/// <summary>Inserts an item into a container using auto-placement. Returns the slot (<c>invX</c>) it was placed into, or -1 if failed.</summary>
 	public static int InsertToSubContainer(Card container, Thing item)
 	{
 		if (container == null || !container.IsContainer || item == null) return -1;
@@ -252,8 +249,7 @@ public static class StorageAuto
 		return itemCard.invX >= 0 ? itemCard.invX : -1;
 	}
 
-	// Get occupied slots for inventory (excludes subcontainer contents)
-	// Only returns slots from items directly in the player inventory, not items inside subcontainers
+	/// <summary>Returns the list of occupied <c>invX</c> slots in the player's direct inventory, excluding items inside subcontainers.</summary>
 	public static List<int> GetOccupiedInventorySlots(Chara c)
 	{
 		List<int> occupiedSlots = new List<int>();
@@ -276,8 +272,7 @@ public static class StorageAuto
 		return occupiedSlots;
 	}
 
-	// Spawn item to inventory from ThingData descriptor - auto-placement
-	// Returns the slot (invX) it was placed into, or -1 if failed
+	/// <summary>Reconstructs an item from a <see cref="ThingData"/> descriptor and inserts it into inventory. Returns the slot (<c>invX</c>) or -1 if failed.</summary>
 	public static int SpawnToInventory(Chara c, ThingData descriptor)
 	{
 		if (descriptor == null) return -1;
@@ -288,8 +283,7 @@ public static class StorageAuto
 		return InsertToInventory(c, card.Thing);
 	}
 
-	// Spawn item to subcontainer from ThingData descriptor - auto-placement
-	// Returns the slot (invX) it was placed into, or -1 if failed
+	/// <summary>Reconstructs an item from a <see cref="ThingData"/> descriptor and inserts it into a container. Returns the slot (<c>invX</c>) or -1 if failed.</summary>
 	public static int SpawnToSubContainer(Card container, ThingData descriptor)
 	{
 		if (descriptor == null) return -1;
@@ -301,13 +295,16 @@ public static class StorageAuto
 	}
 }
 
-// Fixed-slot storage manager (Toolbar, Toolbelt, Equipment)
-// Handles storage that requires explicit slot specification - strict bounds checking
+/// <summary>
+/// Handles fixed-slot storage (toolbar, toolbelt, equipment) that requires explicit slot specification.
+/// All methods throw on invalid slots or placement failure.
+/// </summary>
 public static class StorageFixed
 {
-	// Insert item into toolbar at normalized slot (0-19, both hotbar pages)
-	// Throws ArgumentOutOfRangeException if slot >= 20
-	// Returns the slot if successful, throws if failed
+	/// <summary>
+	/// Inserts an item into a toolbar slot. Returns the slot if successful.
+	/// Throws <see cref="ArgumentOutOfRangeException"/> if <paramref name="normalizedSlot"/> is out of range (0-19).
+	/// </summary>
 	public static int InsertToToolbar(Chara c, Thing item, int normalizedSlot)
 	{
 		if (normalizedSlot < 0 || normalizedSlot >= ItemSlotManager.ToolbarSlotCount)
@@ -328,9 +325,10 @@ public static class StorageFixed
 		return normalizedSlot;
 	}
 
-	// Insert item into toolbelt at normalized slot (0-4)
-	// Throws ArgumentOutOfRangeException if slot >= 5
-	// Returns the slot if successful, throws if failed
+	/// <summary>
+	/// Inserts an item into an accessory slot in the toolbelt container. Returns the slot if successful.
+	/// Throws <see cref="ArgumentOutOfRangeException"/> if <paramref name="normalizedSlot"/> is out of range (0-4).
+	/// </summary>
 	public static int InsertToToolbelt(Chara c, Thing item, int normalizedSlot)
 	{
 		if (normalizedSlot < 0 || normalizedSlot >= ItemSlotManager.AccessorySlotCount)
@@ -349,10 +347,12 @@ public static class StorageFixed
 		return normalizedSlot;
 	}
 
-	// Insert item into equipment slot
-	// slotIndex: Raw slot.index value from the game (0, 1, 2, 3, etc.) - must match the exact slot the item was exported from
-	// Throws if elementId is invalid, slotIndex is null, or slot not found
-	// Returns the slotIndex if successful
+	/// <summary>
+	/// Equips an item to a body slot matched by <paramref name="elementId"/> and <paramref name="slotIndex"/>.
+	/// <paramref name="slotIndex"/> is the raw <c>slot.index</c> value from the game and must match the slot the item was exported from.
+	/// Throws if the slot is not found or equip fails.
+	/// Returns <paramref name="slotIndex"/> if successful.
+	/// </summary>
 	public static int InsertToEquipment(Chara c, Thing item, int elementId, int slotIndex)
 	{
 		if (item == null) throw new ArgumentNullException(nameof(item));
@@ -378,9 +378,10 @@ public static class StorageFixed
 		return slot.index;
 	}
 
-	// Spawn item to toolbar from ThingData descriptor at normalized slot (0-19)
-	// Throws ArgumentOutOfRangeException if slot >= 20
-	// Returns the slot if successful, throws if failed
+	/// <summary>
+	/// Reconstructs an item from a <see cref="ThingData"/> descriptor and inserts it into a toolbar slot.
+	/// Throws <see cref="ArgumentOutOfRangeException"/> if <paramref name="normalizedSlot"/> is out of range (0-19).
+	/// </summary>
 	public static int SpawnToToolbar(Chara c, ThingData descriptor, int normalizedSlot)
 	{
 		if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));

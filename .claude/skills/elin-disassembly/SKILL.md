@@ -14,12 +14,12 @@ Any time you need to:
 - Look up a type, method, field, or property in the decompiled source
 - Trace logic or inheritance across files
 - Verify how the game implements a specific behavior
-- Answer any question — yours or the user's — that requires inspecting `.cs` files under the disassembly
+- Answer any question - yours or the user's - that requires inspecting `.cs` files under the disassembly
 
 ## How to invoke
 
-Pass a clear, specific prompt — a type name, method, or behavior you need to understand. The subagent is stateless and can't ask follow-up questions, so be thorough: specify the type or method you're targeting, what you want to know about it, and what you need back (signature, line range, explaination prose, etc.). You don't need to specify file paths or grep patterns; the analyst handles navigation internally.
+Pass a clear, specific prompt - a type name, method, or behavior you need to understand. The subagent is stateless and can't ask follow-up questions, so be thorough: specify the type or method you're targeting, what you want to know about it, and what you need back (signature, line range, explaination prose, etc.). You don't need to specify file paths or grep patterns; the analyst handles navigation internally.
 
 ## Using the result
 
-The analyst returns findings with file, type, method, and line references. Reason over those results freely — use them to inform code you're writing, answer the user, or feed into further subagent calls.
+The analyst returns findings with file, type, method, and line references. Reason over those results freely and use them to inform code you're writing, answer the user, or feed into further subagent calls.

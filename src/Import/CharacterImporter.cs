@@ -29,6 +29,7 @@ public static class CharacterImporter
 			c.ChangeJob(dumpData.cardIdJob[0]);
 			importedCount++;
 		}
+		// RefreshDomain syncs player faction/domain state after race or job changes
 		EMono.player.RefreshDomain();
 		if (dumpData.cardAltName != null && dumpData.cardAltName.Count > 0)
 		{
@@ -125,9 +126,11 @@ public static class CharacterImporter
 			{
 				if (entry.ints == null || !EClass.sources.charas.map.ContainsKey(entry.id))
 					continue;
+				// Clone so the serialized array and live array don't share the same reference
 				var creature = new CodexCreature { id = entry.id, _ints = (int[])entry.ints.Clone() };
 				EClass.player.codex.creatures[entry.id] = creature;
 			}
+			// OnLoad() rebuilds cached codex data (kill counts etc.) from the raw _ints arrays we just populated
 			EClass.player.codex.OnLoad();
 		}
 
@@ -169,13 +172,11 @@ public static class CharacterImporter
 				}
 			}
 
-			// Import level experience
 			((Card)c).exp = dumpData.charaLevelExp;
 		}
 
 		((Card)c).feat = dumpData.charaFreeFeatPoints;
 
-		// Import all elements
 		if (dumpData.charaElements != null && dumpData.charaElements.Count > 0)
 		{
 			// Filter elements by category based on import options
@@ -208,7 +209,7 @@ public static class CharacterImporter
 			{
 				string exportedRaceId = (dumpData.cardIdRace != null && dumpData.cardIdRace.Count > 0) ? dumpData.cardIdRace[0] : null;
 				string exportedJobId = (dumpData.cardIdJob != null && dumpData.cardIdJob.Count > 0) ? dumpData.cardIdJob[0] : null;
-				// Pass Chara directly — no Card wrapping needed here
+				// Pass Chara directly - no Card wrapping needed here
 				ImportElementConfig(c, elementsToImport, exportedRaceId, exportedJobId);
 			}
 		}
@@ -332,7 +333,6 @@ public static class CharacterImporter
 		}
 		c.corruption = dumpData.corruption;
 
-		// Import tempElements (temporary modifiers)
 		if (dumpData.tempElements != null && dumpData.tempElements.Count > 0)
 		{
 			if (c.tempElements == null)
@@ -358,7 +358,6 @@ public static class CharacterImporter
 
 		// Conditions are always cured via HealAll() - never import them for new game plus
 
-		// Import mutations (ether disease feats)
 		if (dumpData.mutations != null && dumpData.mutations.Count > 0 && ModConfig.GetOption("cureDiseases")?.Value != true)
 		{
 			foreach (MutationData mutationData in dumpData.mutations)
@@ -372,7 +371,6 @@ public static class CharacterImporter
 		// Always set HP to max to account for level ups
 		c.hp = c.MaxHP;
 
-		// Refresh character state and UI
 		c.Refresh();
 		if (c.IsPC)
 		{
@@ -449,7 +447,6 @@ public static class CharacterImporter
 
 		// Use CureType.Heal - cures conditions/buffs/debuffs, does not clear tempElements
 		c.Cure(CureType.Heal, 100);
-		// Manually set HP/mana/stamina
 		c.hp = c.MaxHP;
 		c.mana.value = c.mana.max / 2;
 		c.stamina.value = c.stamina.max / 2;
@@ -468,7 +465,7 @@ public static class CharacterImporter
 	///   - SourcesLookupFailed: the dump has race/job IDs but they aren't in current game sources (mod
 	///     version mismatch or removed content).
 	/// In both cases we skip the dance and import raw vBase directly. The result is correct as long as
-	/// the new character's race/job elementMap feats don't overlap with purchased feats in the dump —
+	/// the new character's race/job elementMap feats don't overlap with purchased feats in the dump -
 	/// an acceptable trade-off for a degraded data situation.
 	/// </summary>
 	private static void ImportElementConfig(Chara c, List<ElementData> elements, string exportedRaceId, string exportedJobId)
@@ -486,7 +483,7 @@ public static class CharacterImporter
 
 		if (!dumpHasRace || !dumpHasJob)
 		{
-			// Dump is missing race or job ID — old format or corrupted data.
+			// Dump is missing race or job ID (old format or corrupted data).
 			// Can't run the dance. Import raw vBase directly.
 			ImportElementsRaw(c, elements);
 			return;
@@ -501,7 +498,7 @@ public static class CharacterImporter
 			return;
 		}
 
-		// Both exported race and job are known — run the full dance.
+		// Both exported race and job are known - run the full dance.
 		ImportElementsWithRaceJobDance(c, elements, exportedRaceId, exportedJobId);
 	}
 
@@ -509,7 +506,7 @@ public static class CharacterImporter
 	/// Imports elements by setting vBase directly, with no race/job vSource adjustment.
 	/// Used when exported race/job data is unavailable or unresolvable.
 	/// Calls Apply for Feat elements only when attribute elements are NOT being imported
-	/// directly — when attributes are imported, their exported vBase already contains the
+	/// directly - when attributes are imported, their exported vBase already contains the
 	/// feat's stat contribution and calling Apply would double-count it.
 	/// </summary>
 	private static void ImportElementsRaw(Chara c, List<ElementData> elements)
@@ -589,14 +586,14 @@ public static class CharacterImporter
 		// Step 3: Import exported vBase values and reconcile feat stat effects.
 		//
 		// Whether feat.Apply() needs to run here depends on whether attribute elements
-		// (el60/61/62 — life/mana/stamina) are being imported directly in this same pass.
+		// (el60/61/62 - life/mana/stamina) are being imported directly in this same pass.
 		//
 		// When attributes ARE imported:
 		//   SetBase(el60, exportedVBase) already sets el60 to the correct exported value,
 		//   which has the feat contribution baked in. Calling feat.Apply() on top of that
 		//   double-counts the feat's stat effect. Steps 2 and 4 of the dance add/remove the
 		//   exported race/job's feat contributions and cancel each other; SetBase just
-		//   overwrites el60 with the right exported value — no extra Apply needed.
+		//   overwrites el60 with the right exported value, so no extra Apply is needed.
 		//
 		// When attributes are NOT imported:
 		//   SetBase is never called for el60/61/62, so feat.Apply() is the only way to
@@ -896,7 +893,7 @@ public static class CharacterImporter
 						{
 							if (EClass._zone != null && c.pos != null && c.pos.IsValid)
 								EClass._zone.AddCard(spawnedCard, c.pos);
-							c.AddThing(spawnedCard.Thing, tryStack: true, destInvX: freeSlot, destInvY: -1);
+							c.AddThing(spawnedCard.Thing, tryStack: true, destInvX: freeSlot, destInvY: -1);  // destInvY: -1 = use container default (not toolbar, not inventory override)
 							Card itemCard = (Card)spawnedCard.Thing;
 							placedOnChara = (itemCard.parent == c);
 							if (placedOnChara && itemCard.invX < 0)

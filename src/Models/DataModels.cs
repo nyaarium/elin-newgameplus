@@ -69,7 +69,9 @@ public class ContainerItemData
 	[DataMember] public int parentContainerUid { get; set; }  // Card.uid from _ints[CardIntsIndices.UidOrType]
 }
 
-// Unified item export structure
+/// <summary>
+/// Collects all item categories during export so they can be imported as separate structured lists.
+/// </summary>
 public class ItemExportResult
 {
 	public List<ThingData> toolbarItems = new List<ThingData>();
@@ -78,7 +80,7 @@ public class ItemExportResult
 	public List<ContainerItemData> containerContents = new List<ContainerItemData>();
 }
 
-// Body slot info for equipped item lookup
+/// <summary>Body slot information used to look up the equipment slot an item was exported from.</summary>
 public class BodySlotInfo
 {
 	public int elementId;

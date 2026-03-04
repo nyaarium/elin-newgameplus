@@ -1,18 +1,19 @@
 namespace NewGamePlus;
 
-// Constants for Card._ints array indices
-// Based on Card.cs disassembly - these indices map to Card properties
+/// <summary>
+/// Index constants for the <c>Card._ints</c> array, based on the Card.cs disassembly.
+/// </summary>
 public static class CardIntsIndices
 {
-	// _ints[1] = uid (for containers) or type (spell/ability ID for scrolls/whips)
+	/// <summary>_ints[1]: Card UID for containers, or spell/ability type ID for scrolls and whips.</summary>
 	public const int UidOrType = 1;
-	
-	// _ints[4] = idMaterial
+
+	/// <summary>_ints[4]: Material ID (<c>idMaterial</c>).</summary>
 	public const int IdMaterial = 4;
-	
-	// _ints[6] = Num (quantity)
+
+	/// <summary>_ints[6]: Stack quantity (<c>Num</c>).</summary>
 	public const int Num = 6;
-	
-	// _ints[25] = LV (level)
+
+	/// <summary>_ints[25]: Item level (<c>LV</c>).</summary>
 	public const int Lv = 25;
 }

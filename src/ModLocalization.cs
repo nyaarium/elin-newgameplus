@@ -30,7 +30,6 @@ public class LocalizedString
 
 public static class ModLocalization
 {
-	// String key constants
 	public const string ModTitle = "ModTitle";
 	public const string ExportSuccess = "ExportSuccess";
 	public const string ExportCurrentSave = "ExportCurrentSave";
@@ -41,10 +40,8 @@ public static class ModLocalization
 	public const string DebugImport = "DebugImport";
 	public const string ModTooltip = "ModTooltip";
 
-	// Internal storage for localized strings
 	private static Dictionary<string, Dictionary<string, Func<Dictionary<string, object>, string>>> strings = new Dictionary<string, Dictionary<string, Func<Dictionary<string, object>, string>>>();
 
-	// UI Options
 	public static readonly List<UIOption> InGameOptions = new()
 	{
 		new UIOption
@@ -471,7 +468,6 @@ public static class ModLocalization
 		}
 	};
 
-	// General localized strings (non-option)
 	public static readonly List<LocalizedString> GeneralStrings = new()
 	{
 		new LocalizedString
@@ -568,7 +564,6 @@ public static class ModLocalization
 
 	public static List<UIOption> AllOptions => InGameOptions.Concat(ImportOptions).ToList();
 
-	// Localization methods
 	public static string Get(string key, Dictionary<string, object> values = null)
 	{
 		if (values == null)
@@ -649,7 +644,6 @@ public static class ModLocalization
 		}
 	}
 
-	// Configuration registration
 	public static void RegisterAll(BaseUnityPlugin plugin)
 	{
 		foreach (UIOption option in AllOptions)

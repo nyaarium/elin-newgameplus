@@ -17,6 +17,9 @@ public static class ModConfig
 		return options.TryGetValue(key, out var entry) ? entry : null;
 	}
 
-	// Flag to track that Player.OnStartNewGame has been called (indicates a new game session has started)
+	/// <summary>
+	/// Set by the OnStartNewGame patch when Player.OnStartNewGame fires, and cleared after import.
+	/// Guards against re-importing on subsequent zone loads within the same session.
+	/// </summary>
 	public static bool newGameSessionStarted = false;
 }
