@@ -300,9 +300,9 @@ public static class CharacterImporter
 							StorageAuto.InsertToSubContainer(bankContainer, bankItem.Thing);
 						}
 					}
-					catch (System.Exception)
+					catch (System.Exception ex)
 					{
-						// Item failed to import, continue with next
+						Msg.SayRaw($"NG+: Failed to import bank item '{bankItemData?.id ?? "unknown"}': {ex.Message}");
 					}
 				}
 			}
@@ -683,8 +683,9 @@ public static class CharacterImporter
 				{
 					StorageFixed.SpawnToToolbar(c, item, i);
 				}
-				catch (System.Exception)
+				catch (System.Exception ex)
 				{
+					Msg.SayRaw($"NG+: Failed to import toolbar item '{item?.id ?? "unknown"}' to slot {i}: {ex.Message}");
 					DropAtFeet(c, item);
 				}
 			}
@@ -723,8 +724,9 @@ public static class CharacterImporter
 							}
 						}
 					}
-					catch (System.Exception)
+					catch (System.Exception ex)
 					{
+						Msg.SayRaw($"NG+: Failed to import toolbelt item '{dumpData.toolbeltItems[i]?.id ?? "unknown"}': {ex.Message}");
 						DropAtFeet(c, dumpData.toolbeltItems[i]);
 					}
 				}
@@ -765,8 +767,9 @@ public static class CharacterImporter
 						}
 					}
 				}
-				catch (System.Exception)
+				catch (System.Exception ex)
 				{
+					Msg.SayRaw($"NG+: Failed to equip item '{thingData?.id ?? "unknown"}' to slot {thingData?.slotElementId}: {ex.Message}");
 					if (spawnedCard != null)
 						DropAtFeet(c, spawnedCard);
 					else

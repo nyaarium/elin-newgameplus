@@ -94,6 +94,12 @@ public static class ThingUtils
 		Card card = (Card)(object)((Card)ThingGen.Create(thingData.id, idMaterial, lv)).SetNum(num);
 		if (card == null) return null;
 
+		// Guard: if this card is somehow a Chara, warn and preserve UID to avoid cardMap corruption
+		if (card.isChara)
+		{
+			Msg.SayRaw($"NG+: Warning — attempted to restore a Chara '{thingData.id}' via RestoreThingFromData. UID preserved.");
+		}
+
 		if (card.IsContainer)
 		{
 			card.things.DestroyAll((Func<Thing, bool>)null);
