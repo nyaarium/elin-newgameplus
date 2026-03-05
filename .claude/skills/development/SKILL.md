@@ -47,7 +47,18 @@ Before adding any instrumentation, state 3-5 concrete, testable hypotheses. Good
 
 Add `DebugLogger.DebugLog` calls to confirm or reject each hypothesis (typically 2-6 logs total). Log entry/exit, key values at decision points, which branch was taken, and important return values. Don't log every line, redundant data, or things you already know are correct.
 
-### 3. Gather Evidence
+Be sure to surround instruments with #region agent log for easier cleanup.
+
+### Reproduction Steps
+
+When it comes time to reproduction steps:
+
+- Make the reproduction steps.
+- Steps like "build" for example, can be automated. Forward it to the agent responsible for it and omit from the remaining _human repro steps_.
+- Relay repro up to the Engineer teammate. Engineer will relay it up until it reaches human.
+- When human says to proceed, check .cursor/ for the logs.
+
+### 4. Gather Evidence
 
 Run the code and examine the debug log. For each hypothesis, decide:
 
@@ -57,7 +68,7 @@ Run the code and examine the debug log. For each hypothesis, decide:
 
 Only fix issues when you have clear runtime evidence pointing to the cause. Don't guess.
 
-### 4. Fix and Verify
+### 5. Fix and Verify
 
 Keep instrumentation in place after a fix, run a verification test, and only remove debug logs once the fix is confirmed. That avoids "fixed one thing, broke another."
 
