@@ -43,6 +43,7 @@ Credits again to the original author for creating the original mod. This mod has
 - Known BGMs (Tapes)
 - Sketches (Drawings)
 - Key Items: Fragrance of Goddess, Black Cat's Saliva, Feather Shard of Goddess, and Lucky Coin (you will need to go buy the license again)
+- Installed genes
 
 **Configurable in Mod Options:**
 
@@ -62,6 +63,10 @@ Credits again to the original author for creating the original mod. This mod has
 - Include Influence
 - Include Craft Recipes
 - Include Codex
+- Include Lucky Coin
+- Include Little Sister Counters
+- Include Kumi (Secret Experience of Kumiromi)
+- Include Deepest Floor
 - Cure Ether Diseases
 - Cure Mutations
 

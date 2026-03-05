@@ -468,6 +468,94 @@ public static class ModLocalization
 		},
 		new UIOption
 		{
+			ConfigKey = "includeLuckyCoin",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include Lucky Coin count.",
+			ToggleId = "importIncludeLuckyCoinToggle",
+			LabelKey = "ImportIncludeLuckyCoin",
+			TooltipKey = "ImportIncludeLuckyCoinTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Lucky Coins" },
+				{ "JP", "ラッキーコインを含める" },
+				{ "CN", "包含幸运硬币" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Lucky Coin count carried over from previous save." },
+				{ "JP", "前回のセーブから引き継いだラッキーコインの枚数を含めます。" },
+				{ "CN", "包含从上一个存档继承的幸运硬币数量。" }
+			}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeLittleSister",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include Little Sister kill/save counters.",
+			ToggleId = "importIncludeLittleSisterToggle",
+			LabelKey = "ImportIncludeLittleSister",
+			TooltipKey = "ImportIncludeLittleSisterTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Little Sister Counters" },
+				{ "JP", "リトルシスターカウンターを含める" },
+				{ "CN", "包含小妹妹计数器" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Little Sister killed and saved counters. Affects furniture gacha value." },
+				{ "JP", "リトルシスターの撃破・救出カウンターを含めます。家具ガチャの価値に影響します。" },
+				{ "CN", "包含小妹妹击杀和救助计数器。影响家具扭蛋价值。" }
+			}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeKumi",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include Secret Experience of Kumiromi count.",
+			ToggleId = "importIncludeKumiToggle",
+			LabelKey = "ImportIncludeKumi",
+			TooltipKey = "ImportIncludeKumiTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Kumi" },
+				{ "JP", "クミロミの秘密の経験を含める" },
+				{ "CN", "包含库米罗妮的秘藏经验" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Secret Experience of Kumiromi book count." },
+				{ "JP", "クミロミの秘密の経験の使用回数を含めます。" },
+				{ "CN", "包含库米罗妮的秘藏经验书籍使用次数。" }
+			}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeDeepest",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include deepest dungeon floor reached.",
+			ToggleId = "importIncludeDeepestToggle",
+			LabelKey = "ImportIncludeDeepest",
+			TooltipKey = "ImportIncludeDeepestTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Deepest Floor" },
+				{ "JP", "最深階を含める" },
+				{ "CN", "包含最深层" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include deepest dungeon floor reached. Affects wish item quality." },
+				{ "JP", "到達した最深階を含めます。願い事のアイテム品質に影響します。" },
+				{ "CN", "包含已到达的最深层。影响许愿物品品质。" }
+			}
+		},
+		new UIOption
+		{
 			ConfigKey = "includeBodyParts",
 			ConfigSection = "import",
 			DefaultValue = false,

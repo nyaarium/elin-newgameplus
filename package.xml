@@ -57,6 +57,7 @@
     [*]Known BGMs (Tapes)
     [*]Sketches (Drawings)
     [*]Key Items: Fragrance of Goddess, Black Cat's Saliva, Feather Shard of Goddess, and Lucky Coin (you will need to go buy the license again)
+    [*]Installed genes
     [/list]
 
     [b]Configurable in Mod Options:[/b]
@@ -78,6 +79,10 @@
     [*]Include Influence
     [*]Include Craft Recipes
     [*]Include Codex
+    [*]Include Lucky Coin
+    [*]Include Little Sister Counters
+    [*]Include Kumi (Secret Experience of Kumiromi)
+    [*]Include Deepest Floor
     [*]Cure Ether Diseases
     [*]Cure Mutations
     [/list]
@@ -101,6 +106,9 @@
 
     [list]
     [*]Added "Include Body Parts" option (default). Leave off to start fresh on races like Slimes.
+    [*]Added optional toggles for Lucky Coin, Little Sister Counters, Kumi, and Deepest Floor (all default on).
+    [*]Fixed unspent feat points carrying over when "Include Player Level" was disabled.
+    [*]Installed genes now included.
     [/list]
 
     [b]2026.02.25[/b]

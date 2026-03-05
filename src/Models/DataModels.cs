@@ -88,6 +88,21 @@ public class BodySlotInfo
 }
 
 [DataContract]
+public class GeneData
+{
+	[DataMember] public string id { get; set; }        // chara source ID (e.g. "slime")
+	[DataMember] public int[] ints { get; set; }       // int[6]: type, cost, lv, seed, bits, slot
+	[DataMember] public List<int> vals { get; set; }   // flat pairs: [elementId, value, ...]
+}
+
+[DataContract]
+public class CharaGenesData
+{
+	[DataMember] public List<GeneData> items { get; set; }
+	[DataMember] public int inferior { get; set; }
+}
+
+[DataContract]
 public class CharacterDumpData
 {
 	[DataMember] public List<string> cardIdPortrait { get; set; }
@@ -135,4 +150,5 @@ public class CharacterDumpData
 	[DataMember] public List<ThingData> wornEquipment { get; set; }
 	[DataMember] public List<ContainerItemData> containerContents { get; set; }
 	[DataMember] public List<ThingData> bankItems { get; set; }  // Items in bank container (including money & items)
+	[DataMember] public CharaGenesData charaGenes { get; set; }
 }

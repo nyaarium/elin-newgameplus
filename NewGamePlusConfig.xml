@@ -81,6 +81,22 @@
                     <contentId>ImportIncludeBodyParts</contentId>
                     <tooltip>ImportIncludeBodyPartsTooltip</tooltip>
                 </toggle>
+                <toggle id="importIncludeLuckyCoinToggle">
+                    <contentId>ImportIncludeLuckyCoin</contentId>
+                    <tooltip>ImportIncludeLuckyCoinTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeLittleSisterToggle">
+                    <contentId>ImportIncludeLittleSister</contentId>
+                    <tooltip>ImportIncludeLittleSisterTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeKumiToggle">
+                    <contentId>ImportIncludeKumi</contentId>
+                    <tooltip>ImportIncludeKumiTooltip</tooltip>
+                </toggle>
+                <toggle id="importIncludeDeepestToggle">
+                    <contentId>ImportIncludeDeepest</contentId>
+                    <tooltip>ImportIncludeDeepestTooltip</tooltip>
+                </toggle>
             </vlayout>
         </hlayout>
 

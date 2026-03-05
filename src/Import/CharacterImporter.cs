@@ -64,23 +64,23 @@ public static class CharacterImporter
 		{
 			EClass.player.ModKeyItem("jure_feather", dumpData.player_jure_feather, true);
 		}
-		if (dumpData.player_lucky_coin > 0)
+		if (ModConfig.GetOption("includeLuckyCoin")?.Value == true && dumpData.player_lucky_coin > 0)
 		{
 			EClass.player.ModKeyItem("lucky_coin", dumpData.player_lucky_coin, true);
 		}
-		if (dumpData.player_little_dead > 0)
+		if (ModConfig.GetOption("includeLittleSister")?.Value == true && dumpData.player_little_dead > 0)
 		{
 			EClass.player.little_dead = dumpData.player_little_dead;
 		}
-		if (dumpData.player_little_saved > 0)
+		if (ModConfig.GetOption("includeLittleSister")?.Value == true && dumpData.player_little_saved > 0)
 		{
 			EClass.player.little_saved = dumpData.player_little_saved;
 		}
-		if (dumpData.playerDeepest > 0)
+		if (ModConfig.GetOption("includeDeepest")?.Value == true && dumpData.playerDeepest > 0)
 		{
 			EClass.player.stats.deepest = dumpData.playerDeepest;
 		}
-		if (dumpData.playerKumi > 0)
+		if (ModConfig.GetOption("includeKumi")?.Value == true && dumpData.playerKumi > 0)
 		{
 			EClass.player.stats.kumi = dumpData.playerKumi;
 		}
@@ -159,7 +159,10 @@ public static class CharacterImporter
 			((Card)c).exp = dumpData.charaLevelExp;
 		}
 
-		((Card)c).feat = dumpData.charaFreeFeatPoints;
+		if (ModConfig.GetOption("includePlayerLevel")?.Value == true)
+		{
+			((Card)c).feat = dumpData.charaFreeFeatPoints;
+		}
 
 		if (dumpData.charaElements != null && dumpData.charaElements.Count > 0)
 		{
@@ -349,6 +352,22 @@ public static class CharacterImporter
 				// Apply mutation via SetFeat
 				c.SetFeat(mutationData.featId, mutationData.value);
 			}
+		}
+
+		// Restore gene registry (effects are already in charaElements, do NOT call Apply)
+		if (dumpData.charaGenes != null && dumpData.charaGenes.items != null && dumpData.charaGenes.items.Count > 0)
+		{
+			CharaGenes genes = new CharaGenes();
+			genes.inferior = dumpData.charaGenes.inferior;
+			foreach (GeneData geneData in dumpData.charaGenes.items)
+			{
+				DNA dna = new DNA();
+				dna.id = geneData.id;
+				dna.ints = geneData.ints != null ? (int[])geneData.ints.Clone() : null;
+				dna.vals = geneData.vals != null ? new List<int>(geneData.vals) : null;
+				genes.items.Add(dna);
+			}
+			c.c_genes = genes;
 		}
 
 		c.CalculateMaxStamina();

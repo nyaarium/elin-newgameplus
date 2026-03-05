@@ -79,7 +79,8 @@ public class NewGamePlus : BaseUnityPlugin
 			toolbeltItems = itemResult.toolbeltItems,
 			wornEquipment = itemResult.wornEquipment,
 			containerContents = itemResult.containerContents,
-			bankItems = CharacterExporter.ExportBankItems()
+			bankItems = CharacterExporter.ExportBankItems(),
+			charaGenes = ExportGenes(c)
 		};
 
 		string dumpFilePath = GetDumpFilePath();
@@ -111,6 +112,27 @@ public class NewGamePlus : BaseUnityPlugin
 			list.Add(new CodexCreatureData { id = kv.Key, ints = (int[])kv.Value._ints.Clone() });
 		}
 		return list;
+	}
+
+	private static CharaGenesData ExportGenes(Chara c)
+	{
+		if (c.c_genes == null || c.c_genes.items == null || c.c_genes.items.Count == 0)
+			return null;
+		var data = new CharaGenesData
+		{
+			inferior = c.c_genes.inferior,
+			items = new List<GeneData>()
+		};
+		foreach (DNA dna in c.c_genes.items)
+		{
+			data.items.Add(new GeneData
+			{
+				id = dna.id,
+				ints = dna.ints != null ? (int[])dna.ints.Clone() : null,
+				vals = dna.vals != null ? new List<int>(dna.vals) : null
+			});
+		}
+		return data;
 	}
 
 	private static Dictionary<string, int> ExportZoneInfluence()
