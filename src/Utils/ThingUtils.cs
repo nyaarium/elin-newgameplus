@@ -94,6 +94,12 @@ public static class ThingUtils
 		Card card = (Card)(object)((Card)ThingGen.Create(thingData.id, idMaterial, lv)).SetNum(num);
 		if (card == null) return null;
 
+		// Guard: if this card is somehow a Chara, warn and preserve UID to avoid cardMap corruption
+		if (card.isChara)
+		{
+			Msg.SayRaw($"NG+: Warning — attempted to restore a Chara '{thingData.id}' via RestoreThingFromData. UID preserved.");
+		}
+
 		if (card.IsContainer)
 		{
 			card.things.DestroyAll((Func<Thing, bool>)null);
@@ -110,10 +116,18 @@ public static class ThingUtils
 		}
 
 		// Restore full _ints array (mirrors game deserialization - _ints is the source of truth)
+		// Preserve the new UID assigned by ThingGen.Create to avoid registry corruption
 		if (thingData.ints != null && thingData.ints.Length > 0)
 		{
+			int newUid = (card._ints != null && card._ints.Length > CardIntsIndices.UidOrType)
+				? card._ints[CardIntsIndices.UidOrType]
+				: 0;
 			card._ints = new int[thingData.ints.Length];
 			Array.Copy(thingData.ints, card._ints, thingData.ints.Length);
+			if (newUid != 0 && card._ints.Length > CardIntsIndices.UidOrType)
+			{
+				card._ints[CardIntsIndices.UidOrType] = newUid;
+			}
 		}
 
 		// Unpack _bits1/_bits2 from _ints (mirrors Card._OnDeserialized - game never calls ChangeMaterial on load)

@@ -5,7 +5,7 @@
   <author>nyaarium</author>
   <tags>General</tags>
   <loadPriority>100</loadPriority>
-  <version>1.2.3</version>
+  <version>1.3.0</version>
   <description>
     [h2]New Game++[/h2]
 
@@ -54,10 +54,10 @@
     [*]Counters for little dead and saved
     [*]Deepest (deepest floor reached)
     [*]Kumi (Secret Experience of Kumiromi books the character has used)
-    [*]Work/hobby bonuses from your faction branch (work elements)
     [*]Known BGMs (Tapes)
     [*]Sketches (Drawings)
     [*]Key Items: Fragrance of Goddess, Black Cat's Saliva, Feather Shard of Goddess, and Lucky Coin (you will need to go buy the license again)
+    [*]Installed genes
     [/list]
 
     [b]Configurable in Mod Options:[/b]
@@ -69,6 +69,7 @@
     [*]Include Bank
     [*]Include Player Level
     [*]Include Acquired Feats (unchecking will refund the points)
+    [*]Include Body Parts (for races/feats that gives body parts)
     [*]Include Abilities (Spells)
     [*]Include Attributes (STR, END, DEX, etc.)
     [*]Include Skills
@@ -78,6 +79,10 @@
     [*]Include Influence
     [*]Include Craft Recipes
     [*]Include Codex
+    [*]Include Lucky Coin
+    [*]Include Little Sister Counters
+    [*]Include Kumi (Secret Experience of Kumiromi)
+    [*]Include Deepest Floor
     [*]Cure Ether Diseases
     [*]Cure Mutations
     [/list]
@@ -92,9 +97,19 @@
     [*]Buildings
     [*]Guild experience
     [*]Paid debt
+    [*]Marriage/fiancé state (attuned rings, fiancé list, marriage history)
     [/list]
 
     [h2]Updates[/h2]
+
+    [b]2026.03.05[/b]
+
+    [list]
+    [*]Added "Include Body Parts" option (default). Leave off to start fresh on races like Slimes.
+    [*]Added optional toggles for Lucky Coin, Little Sister Counters, Kumi, and Deepest Floor (all default on).
+    [*]Fixed unspent feat points carrying over when "Include Player Level" was disabled.
+    [*]Installed genes now included.
+    [/list]
 
     [b]2026.02.25[/b]
 

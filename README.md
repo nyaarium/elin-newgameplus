@@ -40,10 +40,10 @@ Credits again to the original author for creating the original mod. This mod has
 - Counters for little dead and saved
 - Deepest (deepest floor reached)
 - Kumi (Secret Experience of Kumiromi books the character has used)
-- Work/hobby bonuses from your faction branch (work elements)
 - Known BGMs (Tapes)
 - Sketches (Drawings)
 - Key Items: Fragrance of Goddess, Black Cat's Saliva, Feather Shard of Goddess, and Lucky Coin (you will need to go buy the license again)
+- Installed genes
 
 **Configurable in Mod Options:**
 
@@ -53,15 +53,20 @@ Credits again to the original author for creating the original mod. This mod has
 - Include Bank
 - Include Player Level
 - Include Acquired Feats (unchecking will refund the points)
+- Include Body Parts (for races/feats that gives body parts)
 - Include Abilities (Spells)
 - Include Attributes (STR, END, DEX, etc.)
 - Include Skills
 - Include Faith
 - Include Karma
-- Include Fame (tax is based on fame. importing fame will start you with high taxes)
+- Include Fame (Warning: your tax will start high)
 - Include Influence
 - Include Craft Recipes
 - Include Codex
+- Include Lucky Coin
+- Include Little Sister Counters
+- Include Kumi (Secret Experience of Kumiromi)
+- Include Deepest Floor
 - Cure Ether Diseases
 - Cure Mutations
 
@@ -74,3 +79,4 @@ Credits again to the original author for creating the original mod. This mod has
 - Buildings
 - Guild experience
 - Paid debt
+- Marriage/fiancé state (attuned rings, fiancé list, marriage history)

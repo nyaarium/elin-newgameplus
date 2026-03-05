@@ -104,14 +104,14 @@ public static class ModLocalization
 			LabelTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Include Toolbar" },
-				{ "JP", "ツールバーを含める" },
-				{ "CN", "包含工具栏" }
+				{ "JP", "ホットバーを含める" },
+				{ "CN", "包含快捷栏" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Include toolbar items." },
-				{ "JP", "ツールバーのアイテムを含めます。" },
-				{ "CN", "包含工具栏物品。" }
+				{ "JP", "ホットバーのアイテムを含めます。" },
+				{ "CN", "包含快捷栏物品。" }
 			}
 		},
 		new UIOption
@@ -149,13 +149,13 @@ public static class ModLocalization
 			{
 				{ "EN", "Include Inventory and Container Contents" },
 				{ "JP", "インベントリとコンテナの内容を含める" },
-				{ "CN", "包含库存和容器内容" }
+				{ "CN", "包含背包和容器内容" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Include contents of inventory and containers." },
 				{ "JP", "インベントリとコンテナの内容を含めます。" },
-				{ "CN", "包含库存和容器的内容。" }
+				{ "CN", "包含背包和容器的内容。" }
 			}
 		},
 		new UIOption
@@ -237,13 +237,13 @@ public static class ModLocalization
 			{
 				{ "EN", "Include Faith" },
 				{ "JP", "信仰を含める" },
-				{ "CN", "包含虔诚" }
+				{ "CN", "包含信仰" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Includes your faith and number of days with the current deity" },
 				{ "JP", "あなたの信仰と現在の神との日数を含めます" },
-				{ "CN", "包含您的信仰和与当前神的天数" }
+				{ "CN", "包含您的信仰和与当前神明的天数" }
 			}
 		},
 		new UIOption
@@ -391,13 +391,13 @@ public static class ModLocalization
 			{
 				{ "EN", "Include fame (Warning: your tax will start high)" },
 				{ "JP", "名声を含める（注意：税が高く始まります）" },
-				{ "CN", "包含声望（注意：税款会从较高开始）" }
+				{ "CN", "包含名声（注意：税款会从较高开始）" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Includes your fame. Tax is based on fame. Importing fame will start you with high taxes." },
 				{ "JP", "あなたの名声を含めます。税は名声に基づくため、名声をインポートするとはじめから高い税額になります。" },
-				{ "CN", "包含您的声望。税基于声望。导入声望会使您一开始就面临高额税款。" }
+				{ "CN", "包含您的名声。税款基于名声。导入名声会使您一开始就面临高额税款。" }
 			}
 		},
 		new UIOption
@@ -465,7 +465,117 @@ public static class ModLocalization
 				{ "JP", "エーテル以外の原因による変異を治療します。" },
 				{ "CN", "治愈非以太引起的突变。" }
 			}
-		}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeLuckyCoin",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include Lucky Coin count.",
+			ToggleId = "importIncludeLuckyCoinToggle",
+			LabelKey = "ImportIncludeLuckyCoin",
+			TooltipKey = "ImportIncludeLuckyCoinTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Lucky Coins" },
+				{ "JP", "ラッキーコインを含める" },
+				{ "CN", "包含幸运硬币" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Lucky Coin count carried over from previous save." },
+				{ "JP", "前回のセーブから引き継いだラッキーコインの枚数を含めます。" },
+				{ "CN", "包含从上一个存档继承的幸运硬币数量。" }
+			}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeLittleSister",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include Little Sister kill/save counters.",
+			ToggleId = "importIncludeLittleSisterToggle",
+			LabelKey = "ImportIncludeLittleSister",
+			TooltipKey = "ImportIncludeLittleSisterTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Little Sister Counters" },
+				{ "JP", "リトルシスターカウンターを含める" },
+				{ "CN", "包含小妹妹计数器" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Little Sister killed and saved counters. Affects furniture gacha value." },
+				{ "JP", "リトルシスターの撃破・救出カウンターを含めます。家具ガチャの価値に影響します。" },
+				{ "CN", "包含小妹妹击杀和救助计数器。影响家具扭蛋价值。" }
+			}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeKumi",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include Secret Experience of Kumiromi count.",
+			ToggleId = "importIncludeKumiToggle",
+			LabelKey = "ImportIncludeKumi",
+			TooltipKey = "ImportIncludeKumiTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Kumi" },
+				{ "JP", "クミロミの秘密の経験を含める" },
+				{ "CN", "包含库米罗妮的秘藏经验" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Secret Experience of Kumiromi book count." },
+				{ "JP", "クミロミの秘密の経験の使用回数を含めます。" },
+				{ "CN", "包含库米罗妮的秘藏经验书籍使用次数。" }
+			}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeDeepest",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include deepest dungeon floor reached.",
+			ToggleId = "importIncludeDeepestToggle",
+			LabelKey = "ImportIncludeDeepest",
+			TooltipKey = "ImportIncludeDeepestTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Deepest Floor" },
+				{ "JP", "最深階を含める" },
+				{ "CN", "包含最深层" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include deepest dungeon floor reached. Affects wish item quality." },
+				{ "JP", "到達した最深階を含めます。願い事のアイテム品質に影響します。" },
+				{ "CN", "包含已到达的最深层。影响许愿物品品质。" }
+			}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeBodyParts",
+			ConfigSection = "import",
+			DefaultValue = false,
+			Description = "Include extra body parts onto races with less body parts (slimes, chaos shapes).",
+			ToggleId = "importIncludeBodyPartsToggle",
+			LabelKey = "ImportIncludeBodyParts",
+			TooltipKey = "ImportIncludeBodyPartsTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Body Parts" },
+				{ "JP", "身体部位を含める" },
+				{ "CN", "包含身体部位" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include extra body parts onto races with less body parts (slimes, chaos shapes)." },
+				{ "JP", "部位が少ない種族（スライム、カオスシェイプなど）に追加の身体部位を引き継ぎます。" },
+				{ "CN", "将额外身体部位引入身体部位较少的种族（史莱姆、混沌形态等）。" }
+			}
+		},
 	};
 
 	public static readonly List<LocalizedString> GeneralStrings = new()

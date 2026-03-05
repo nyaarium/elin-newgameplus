@@ -64,23 +64,23 @@ public static class CharacterImporter
 		{
 			EClass.player.ModKeyItem("jure_feather", dumpData.player_jure_feather, true);
 		}
-		if (dumpData.player_lucky_coin > 0)
+		if (ModConfig.GetOption("includeLuckyCoin")?.Value == true && dumpData.player_lucky_coin > 0)
 		{
 			EClass.player.ModKeyItem("lucky_coin", dumpData.player_lucky_coin, true);
 		}
-		if (dumpData.player_little_dead > 0)
+		if (ModConfig.GetOption("includeLittleSister")?.Value == true && dumpData.player_little_dead > 0)
 		{
 			EClass.player.little_dead = dumpData.player_little_dead;
 		}
-		if (dumpData.player_little_saved > 0)
+		if (ModConfig.GetOption("includeLittleSister")?.Value == true && dumpData.player_little_saved > 0)
 		{
 			EClass.player.little_saved = dumpData.player_little_saved;
 		}
-		if (dumpData.playerDeepest > 0)
+		if (ModConfig.GetOption("includeDeepest")?.Value == true && dumpData.playerDeepest > 0)
 		{
 			EClass.player.stats.deepest = dumpData.playerDeepest;
 		}
-		if (dumpData.playerKumi > 0)
+		if (ModConfig.GetOption("includeKumi")?.Value == true && dumpData.playerKumi > 0)
 		{
 			EClass.player.stats.kumi = dumpData.playerKumi;
 		}
@@ -91,22 +91,6 @@ public static class CharacterImporter
 		if (dumpData.playerSketches != null && dumpData.playerSketches.Count > 0)
 		{
 			EClass.player.sketches = dumpData.playerSketches.ToHashSet();
-		}
-
-		// Import workElements (work/hobby bonuses from faction branch)
-		// Note: This may not fully restore if character's home branch changed, but preserves the bonuses
-		if (dumpData.workElements != null && dumpData.workElements.Count > 0)
-		{
-			if (c.workElements == null)
-			{
-				c.workElements = new ElementContainer();
-				// workElements parent is set by RefreshWorkElements() based on branch, but we'll link to character for now
-				c.workElements.SetParent(c);
-			}
-			foreach (ElementData elementData in dumpData.workElements)
-			{
-				c.workElements.SetBase(elementData.id, elementData.vBase, 0);
-			}
 		}
 
 		if (ModConfig.GetOption("includeSkills")?.Value == true && dumpData.playerKnownCraft != null && dumpData.playerKnownCraft.Count > 0)
@@ -175,7 +159,10 @@ public static class CharacterImporter
 			((Card)c).exp = dumpData.charaLevelExp;
 		}
 
-		((Card)c).feat = dumpData.charaFreeFeatPoints;
+		if (ModConfig.GetOption("includePlayerLevel")?.Value == true)
+		{
+			((Card)c).feat = dumpData.charaFreeFeatPoints;
+		}
 
 		if (dumpData.charaElements != null && dumpData.charaElements.Count > 0)
 		{
@@ -294,9 +281,9 @@ public static class CharacterImporter
 			}
 		}
 
-		// Import extra body parts (from Chaos Shape feat, etc.) if Include Acquired Feats is enabled
+		// Import extra body parts (Slimes, Chaos Shape) if Include Body Parts is enabled
 		// This must be done after feats are imported because Chaos Shape adds body parts
-		if (includeFeats && dumpData.charaBodyParts != null && dumpData.charaBodyParts.Count > 0)
+		if (ModConfig.GetOption("includeBodyParts")?.Value == true && dumpData.charaBodyParts != null && dumpData.charaBodyParts.Count > 0)
 		{
 			ImportBodyParts(c, dumpData.charaBodyParts);
 		}
@@ -316,9 +303,9 @@ public static class CharacterImporter
 							StorageAuto.InsertToSubContainer(bankContainer, bankItem.Thing);
 						}
 					}
-					catch (System.Exception)
+					catch (System.Exception ex)
 					{
-						// Item failed to import, continue with next
+						Msg.SayRaw($"NG+: Failed to import bank item '{bankItemData?.id ?? "unknown"}': {ex.Message}");
 					}
 				}
 			}
@@ -365,6 +352,22 @@ public static class CharacterImporter
 				// Apply mutation via SetFeat
 				c.SetFeat(mutationData.featId, mutationData.value);
 			}
+		}
+
+		// Restore gene registry (effects are already in charaElements, do NOT call Apply)
+		if (dumpData.charaGenes != null && dumpData.charaGenes.items != null && dumpData.charaGenes.items.Count > 0)
+		{
+			CharaGenes genes = new CharaGenes();
+			genes.inferior = dumpData.charaGenes.inferior;
+			foreach (GeneData geneData in dumpData.charaGenes.items)
+			{
+				DNA dna = new DNA();
+				dna.id = geneData.id;
+				dna.ints = geneData.ints != null ? (int[])geneData.ints.Clone() : null;
+				dna.vals = geneData.vals != null ? new List<int>(geneData.vals) : null;
+				genes.items.Add(dna);
+			}
+			c.c_genes = genes;
 		}
 
 		c.CalculateMaxStamina();
@@ -699,8 +702,9 @@ public static class CharacterImporter
 				{
 					StorageFixed.SpawnToToolbar(c, item, i);
 				}
-				catch (System.Exception)
+				catch (System.Exception ex)
 				{
+					Msg.SayRaw($"NG+: Failed to import toolbar item '{item?.id ?? "unknown"}' to slot {i}: {ex.Message}");
 					DropAtFeet(c, item);
 				}
 			}
@@ -739,8 +743,9 @@ public static class CharacterImporter
 							}
 						}
 					}
-					catch (System.Exception)
+					catch (System.Exception ex)
 					{
+						Msg.SayRaw($"NG+: Failed to import toolbelt item '{dumpData.toolbeltItems[i]?.id ?? "unknown"}': {ex.Message}");
 						DropAtFeet(c, dumpData.toolbeltItems[i]);
 					}
 				}
@@ -783,10 +788,18 @@ public static class CharacterImporter
 				}
 				catch (System.Exception)
 				{
+					Msg.SayRaw($"NG+: Failed to equip '{thingData?.id ?? "unknown"}' to slot {thingData?.slotElementId}, placing in inventory.");
 					if (spawnedCard != null)
-						DropAtFeet(c, spawnedCard);
+					{
+						spawnedCard.c_equippedSlot = 0;
+						c.AddThing(spawnedCard.Thing, tryStack: false);
+						if (((Card)spawnedCard.Thing).parent != c)
+							DropAtFeet(c, spawnedCard);
+					}
 					else
+					{
 						DropAtFeet(c, thingData);
+					}
 				}
 			}
 		}

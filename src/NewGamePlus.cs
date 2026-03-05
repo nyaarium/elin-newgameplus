@@ -8,7 +8,7 @@ using HarmonyLib;
 namespace NewGamePlus;
 
 [BepInDependency("evilmask.elinplugins.modoptions", BepInEx.BepInDependency.DependencyFlags.SoftDependency)]
-[BepInPlugin("nyaarium.newgameplusplus", "New Game++", "1.2.2")]
+[BepInPlugin("nyaarium.newgameplusplus", "New Game++", "1.3.0")]
 public class NewGamePlus : BaseUnityPlugin
 {
 	private static NewGamePlus instance;
@@ -71,7 +71,6 @@ public class NewGamePlus : BaseUnityPlugin
 			c_corruptionHistory = c.c_corruptionHistory != null ? c.c_corruptionHistory.ToList() : new List<int>(),
 			tempElements = CharacterExporter.ExportTempElements(c),
 			faithElements = CharacterExporter.ExportFaithElements(c),
-			workElements = CharacterExporter.ExportWorkElements(c),
 			conditions = CharacterExporter.ExportConditions(c),
 			mutations = CharacterExporter.ExportMutations(c),
 
@@ -80,7 +79,8 @@ public class NewGamePlus : BaseUnityPlugin
 			toolbeltItems = itemResult.toolbeltItems,
 			wornEquipment = itemResult.wornEquipment,
 			containerContents = itemResult.containerContents,
-			bankItems = CharacterExporter.ExportBankItems()
+			bankItems = CharacterExporter.ExportBankItems(),
+			charaGenes = ExportGenes(c)
 		};
 
 		string dumpFilePath = GetDumpFilePath();
@@ -112,6 +112,27 @@ public class NewGamePlus : BaseUnityPlugin
 			list.Add(new CodexCreatureData { id = kv.Key, ints = (int[])kv.Value._ints.Clone() });
 		}
 		return list;
+	}
+
+	private static CharaGenesData ExportGenes(Chara c)
+	{
+		if (c.c_genes == null || c.c_genes.items == null || c.c_genes.items.Count == 0)
+			return null;
+		var data = new CharaGenesData
+		{
+			inferior = c.c_genes.inferior,
+			items = new List<GeneData>()
+		};
+		foreach (DNA dna in c.c_genes.items)
+		{
+			data.items.Add(new GeneData
+			{
+				id = dna.id,
+				ints = dna.ints != null ? (int[])dna.ints.Clone() : null,
+				vals = dna.vals != null ? new List<int>(dna.vals) : null
+			});
+		}
+		return data;
 	}
 
 	private static Dictionary<string, int> ExportZoneInfluence()
