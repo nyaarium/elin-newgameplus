@@ -88,11 +88,6 @@ USER vscode
 RUN curl -fsSL https://bun.sh/install | bash
 USER root
 
-# Stash agent installs for devcontainer compatibility
-RUN mkdir -p /var/agent-install \
-	&& cp -a /home/vscode/.local /home/vscode/.claude /home/vscode/.bun /var/agent-install/
-
-
 ############################
 # .NET SDK
 
@@ -104,6 +99,9 @@ RUN apt update && apt install -y libicu-dev \
 	&& rm /tmp/dotnet-install.sh \
 	&& apt clean && rm -rf /var/lib/apt/lists/*
 
+# Stash agent installs for devcontainer compatibility
+RUN mkdir -p /var/agent-install \
+	&& cp -a /home/vscode/.local /home/vscode/.claude /home/vscode/.bun /var/agent-install/
 
 # Switch back to dialog for user's use of apt
 ENV DEBIAN_FRONTEND=dialog
