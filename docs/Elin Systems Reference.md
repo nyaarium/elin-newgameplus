@@ -1,6 +1,6 @@
-# Stats Orchestrators
+# Elin Systems Reference
 
-## Variables / Maps / Arrays
+## Data Model
 
 ### Element Fields
 
@@ -41,12 +41,32 @@
   - When `vExp < 0` and `ValueWithoutLink > 1`: Triggers level down → `ModBase(ele, -1)`
   - Special values: `vExp == -1` = faction-wide element, `vExp == -2` = party-wide element
 
+### Card Storage Layout
+
+- **`Card._ints`** (int array) - Primary storage for card properties. Key indices:
+  - `[0]`: `_bits1` (packed bitfield — isOn, isHidden, isCrafted, etc.)
+  - `[1]`: `uid` (unique ID) for containers; spell/ability type ID for scrolls/whips
+  - `[2]`: `_bits2` (packed bitfield — noSell, isCopy, etc.)
+  - `[4]`: `idMaterial` (material ID)
+  - `[6]`: `Num` (stack quantity)
+  - `[14]`: `hp` (current hit points)
+  - `[24]`: `feat` (unspent feat points)
+  - `[25]`: `LV` (character level)
+  - `[26]`: `exp` (experience points)
+- **`Card._bits1` / `Card._bits2`** - Packed bitfields unpacked from `_ints[0]` and `_ints[2]` during deserialization via `SetInt()`. Game never calls `ChangeMaterial` on load — it calls `_bits1.SetInt(_ints[0])` and `_bits2.SetInt(_ints[2])` directly.
+- **`Card.mapInt`** (Dictionary<int, int>) - Sparse property map for card-specific integers:
+  - Key 3: `c_dyeMat` (dye material)
+  - Key 7: `c_charges` (charges remaining)
+  - Key 27: `c_ammo` (ammo count)
+  - Other keys used for various card properties
+- **`Card.sockets`** (List<int>) - Weapon mod sockets for ranged weapons. Count = list length. Value: 0 = empty slot, otherwise `elementId * 1000 + encLv`.
+
 ### Chara Element Containers
 
 - **`elements`** (`ElementContainerCard`, inherited from `Card`) - Main container for character stats (STR, MAG, END, etc.). Contains elements with `vBase`, `vSource`, `vLink` values. Overrides `ValueBonus()` to add faction bonuses and special calculations (lucky coin, machine bonuses, etc.).
 - **`tempElements`** (`ElementContainer`) - Separate container for temporary modifiers (afflictions, ether diseases). Created lazily on first `ModTempElement()` call. Elements in this container have their own `vBase` values, separate from main `elements`. Linked to character via `SetParent(this)` on creation. Used for UI display of "Temporary Weakness -X" lines via `BonusInfo.WriteNote()`.
 - **`faithElements`** (`ElementContainer`) - Container for faith-based bonuses. Created when character has a faith (`Chara.faith`) via `RefreshFaith()`. Elements are set via `SetBase()` based on piety value and faith's element map, then linked to character via `SetParent(this)`. Displayed in UI via `BonusInfo.WriteNote()` which calls `faithElements.Value(id)`. Can be null if character has no faith.
-- **`workElements`** (`ElementContainer`) - Container for work/hobby bonuses from character's home branch. Created dynamically via `RefreshWorkElements()` when character joins/leaves a faction branch. Contains bonuses from hobbies and works at the branch, calculated based on efficiency. Elements are set via `ModBase()` and linked to character via `SetParent(parent)`, affecting character's `vLink`. Can be null if character has no home branch or is in PC party.
+- **`workElements`** (`ElementContainer`) - Container for work/hobby bonuses from character's home branch. Created dynamically via `RefreshWorkElements()` when character joins/leaves a faction branch, during party joins/leaves, branch member refresh, game loading, and certain trait effects. Contains bonuses from hobbies and works at the branch, calculated based on efficiency. Elements are set via `ModBase()` and linked to character via `SetParent(parent)`, affecting character's `vLink`. Can be null if character has no home branch or is in PC party. **Note**: `RefreshWorkElements()` returns early if `IsPCParty || homeBranch == null || homeBranch.owner == null`, so PC party members never get work elements.
 - **`baseWorkElements`** (`ElementContainer`, property) - Base work elements from all hobbies/works (not branch-specific). Lazy-initialized property that builds elements from `ListHobbies()` and `ListWorks()` via `ModBase()`. Used internally, not linked to character.
 - **`body.slots`** (array of `BodySlot`) - Array representing equipped items. Each slot has `slot.thing.elements` containing the item's element contributions. UI reads directly from `body.slots` to display "Equipment +X", not from `vLink`. Equipment elements are linked to character's `vLink` via `SetParent(owner)` when equipped.
 - **`conditions`** (List of `Condition`) - List of status effects. Each condition can have an `ElementContainer` via `GetElementContainer()` which links to character's `vLink` via `SetParent(owner)`. Displayed in UI via `BonusInfo.WriteNote()` which iterates conditions and sums their element contributions.
@@ -58,15 +78,15 @@
 - **`EClass._zone.elements`** (`ElementContainerZone`) - Zone-based element container. Contains zone-specific elements (policies, techs, land feats). Overrides `OnLearn()` and `OnLevelUp()` for zone-specific messages. Used for zone-wide bonuses and unlocks.
 - **`Faction.elements`** (`ElementContainerZone`) - Faction's zone container. Same as zone elements but for faction-wide effects.
 
-## Functions (Recalculations / Display)
+## Element Value System
 
-### Container Type Behavior
+### Container Types
 
 - **`ElementContainer`** (base class) - Base container class. `ValueBonus()` returns 0 by default. Uses `dict` (`Dictionary<int, Element>`) internally to store and retrieve elements.
 - **`ElementContainerCard`** - Used for `Card.elements`. Overrides `ValueBonus()` to add:
-  - Faction bonuses: `faction.charaElements.Value(ele)`
+  - Faction bonuses: `faction.charaElements.GetElement(e.id)` (null-checked, then `.Value`)
   - Lucky coin bonuses (for LUK)
-  - Machine bonuses (for STR/DEX/SPD)
+  - Machine bonuses (for DV/PV/SPD)
   - Party-wide bonuses (for certain stats)
   - Multiplier bonuses (percentage-based)
 - **`ElementContainerCondition`** - Used for condition element containers. Overrides `LimitLink = false` to allow unlimited linking (conditions can link to character without limit).
@@ -74,7 +94,7 @@
 - **`ElementContainerZone`** - Used for zones and factions. Overrides `OnLearn()` and `OnLevelUp()` for zone-specific messages and logging.
 - **`ElementContainerField`** - Used for field effects. Empty subclass (just inherits base functionality).
 
-### Element Value Calculation
+### Value Calculation
 
 - **`Element.Value`** (int property) - Returns calculated total: `ValueWithoutLink + vLink + ((owner != null) ? owner.ValueBonus(this) : 0)`
   - `ValueWithoutLink = vBase + vSource`
@@ -99,7 +119,9 @@
   - Can be overridden (e.g., `SKILL.GetSourcePotential()`)
   - Used by `ApplyElementMap()` for skill elements (`category == "skill"`): `vSourcePotential += GetSourcePotential(value) * num`
 
-### Element Modification
+## Element Modification
+
+### Core Functions
 
 - **`ElementContainer.ModLink(int id, int v)`** (private method) - Modifies an element's `vLink` by amount `v`:
   - Gets/creates element: `GetOrCreateElement(id)`
@@ -113,7 +135,7 @@
   - Modifies: `orCreateElement.vBase += v`
   - If parent container exists and element can link: Calls `parent.ModLink(ele, v)` to propagate change to parent's `vLink`
   - Calls `orCreateElement.CheckLevelBonus(this)` and `orCreateElement.OnChangeValue()`
-  - If element becomes empty (all values 0): Removes element via `Remove(ele.id)`
+  - If element becomes empty (`vBase == 0 && vSource == 0 && vLink == 0 && vPotential == 0 && vExp == 0`): Removes element via `Remove(id)`
   - **Context matters**:
     - `elements.ModBase()` = **permanent** change to main stats (e.g., feats affecting other elements, curses/blessings on items, training level-ups)
     - `tempElements.ModBase()` = **temporary** change (used by `ModTempElement()`, shown as "Temporary Weakness" in UI)
@@ -144,187 +166,7 @@
   - Returns `dict.TryGetValue(id)` (returns null if not found)
   - **Overloads**: `GetElement(string alias)` - converts alias to ID first
 
-### UI Display
-
-- **`Element._WriteNote(UINote n, ElementContainer owner, Action<UINote> onWriteNote, bool isRef, bool addHeader = true)`** - Renders the main stat panel:
-  - **Header**: Adds header with element name (or ability header for `Act` elements)
-  - **Detail text**: Adds element detail/flavor text if available
-  - **Value display**: Calculates `num = vLink + (IsPCFaction ? faction.charaElements.Value(id) : 0)` for display
-  - **For `Act` elements**: Displays "vValue" with `DisplayValue` and `ValueWithoutLink + num` (shows as "X (Base Y + Z)")
-  - **For regular elements**: If `ShowValue` is true, displays "vCurrent" with `DisplayValue` and `ValueWithoutLink + num`
-  - **Potential display**: If `ShowPotential` is true, displays potential breakdown with `vPotential + vSourcePotential + MinPotential + vTempPotential`
-  - **Relative attribute**: If `ShowRelativeAttribute` is true and element has `aliasParent`, shows parent element info
-  - **Debug info**: If `EClass.debug.showExtra` is true, shows class name, vExp, vSource, vSourcePotential, vPotential, Potential
-  - **Level bonuses**: Calls `CheckLevelBonus(owner, n)` to show level-based unlocks
-  - **Bonus breakdown**: If `ShowBonuses` is true and `owner.Chara != null`, creates `BonusInfo` and calls `WriteNote()` to show detailed breakdown
-- **`Element.BonusInfo.WriteNote()`** - Adds detailed breakdown lines to UI (called from `_WriteNote`):
-  - **Equipment bonuses**: Iterates `body.slots`, sums `thing.elements.GetOrCreateElement(id).Value` for each slot
-    - Excludes `slot.elementId == 44` (special slot)
-    - Excludes global elements (`!orCreateElement.IsGlobalElement`)
-    - Special handling: If `id == 67 || id == 66`, excludes `slot.elementId == 35`
-    - Displays as "equipment: +X" or "equipment: -X"
-  - **Faction bonuses**: If `IsPCFaction`, gets `faction.charaElements.GetElement(id)` and displays `element.Value` as "sub_faction: +X"
-  - **Conditions**: Iterates `conditions` list, for each condition:
-    - Gets `condition.GetElementContainer()` (returns `ElementContainerCondition`)
-    - Calls `elemContainer.Value(id)` and displays as condition name (e.g., "Poison: -5")
-  - **Temporary modifiers**: If `tempElements != null`, calls `tempElements.Value(id)` and displays as "tempStrengthen" or "tempWeaken" based on sign
-  - **Faith bonuses**: If `faithElements != null`, calls `faithElements.Value(id)` and displays using faith feat name or default name
-  - **Multiplier bonuses**: Iterates `elements.dict.Values`, finds elements with `HasTag("multiplier")` and `aliasRef == ele.source.alias`, displays as percentage fix (e.g., "+X%")
-  - **Special cases**: Handles lucky coin (for LUK), machine bonuses (for STR/DEX/SPD), etc.
-
-### Condition Access
-
-- **`BaseCondition.GetElementContainer()`** (virtual method) - Returns `ElementContainer` for condition's stat contributions:
-  - Base implementation returns `elements` (the condition's `ElementContainerCondition`)
-  - Can be overridden (e.g., `ConDisease.GetElementContainer()` returns a different container)
-  - Returns `null` if condition has no element contributions (`UseElements = false`)
-  - **Used by**: `BonusInfo.WriteNote()` to get condition contributions, `WidgetStatsBar` to calculate stat display
-- **`Chara.HasCondition<T>()`** - Checks if character has a condition of type `T`:
-  - Iterates through `conditions` list
-  - Returns `true` if any condition is of type `T`, `false` otherwise
-  - **Used by**: Various game logic checks (e.g., `HasCondition<ConPoison>()`, `HasCondition<ConBurning>()`)
-- **`Chara.GetCondition<T>()`** - Gets condition of type `T` from character:
-  - Iterates through `conditions` list
-  - Returns first condition of type `T`, or `null` if not found
-  - **Used by**: To access specific condition properties (e.g., `GetCondition<ConGravity>()?.GetPhase()`)
-- **`Chara.RemoveCondition<T>()`** - Removes condition of type `T`:
-  - Finds condition in `conditions` list
-  - Calls `condition.Kill()` to remove it
-  - **Note**: Already documented in "Conditions" orchestrator section
-
-## Stat Modification
-
-### Temporary Modifiers
-
-- **`Chara.ModTempElement(int ele, int a, bool naturalDecay, bool onlyRenew)`** - Modifies elements within `tempElements`. Used for afflictions, temporary stat changes, etc.
-  - **Early return**: If `a < 0` and character has "sustain\_" element for this stat, returns early (sustain prevents negative temp modifiers)
-  - **Container creation**: If `tempElements == null`, creates new `ElementContainer()` and calls `tempElements.SetParent(this)` to link it to character
-  - **Feat 1215 bonus**: If character has element 1215 and `a > 0`, multiplies `a` by 150/100 (50% bonus to positive temp modifiers)
-  - **Clamping logic**: Calculates limits based on `elements.ValueWithoutLink(ele)`:
-    - Positive limit: `num3 = (Mathf.Abs(ValueWithoutLink) + 100) / (hasFeat1215 ? 2 : 4)`
-    - Negative limit: `num4 = -ValueWithoutLink - 100`
-    - If `onlyRenew=true`: Adjusts limits (`num3 = Min(a, num3)`, `num4 = Max(a, -num2 / 3)`)
-    - Clamps `a` before calling `ModBase()`: If `a > 0 && (tempBase + a) > num3`, reduces `a` to fit. If `a < 0 && (tempBase + a) < num4`, increases `a` to fit.
-  - **Modification**: Calls `tempElements.ModBase(ele, a)` to modify `vBase` in the `tempElements` container
-  - **Cleanup**: If element's `vBase` becomes 0 after modification, removes element from `tempElements`. If `tempElements` becomes empty, sets `tempElements = null`.
-  - **Note**: This is what creates the "Temporary Weakness -X" display in the UI. If disease progression makes it worse, it would call `ModTempElement()` again with a larger negative value.
-
-### Feats / Traits
-
-- **`Chara.SetFeat(int id, int value = 1, bool msg = false)`** - Sets a feat/trait:
-  1. Gets existing feat: `elements.GetElement(id) as Feat`
-  2. If feat exists and `feat.Value > 0`: Calls `feat.Apply(-feat.Value, elements)` to remove old effects (reverses previous modifications)
-  3. Sets feat's own `vBase` via `elements.SetBase(id, value - (feat?.vSource ?? 0))` - stores only the delta above race/job so that `Value` = `vBase + vSource` = desired total tier. There is no separate "demote" API; use `SetFeat(id, lowerValue)` to downgrade.
-  4. If `feat.Value != 0`: Calls `feat.Apply(feat.Value, elements)` to apply new effects
-  5. Calls `Refresh()` and `CalculateMaxStamina()` if game is started
-  6. If `msg=true`: Displays message about gaining/changing feat
-- **Feat tier and cost (disassembly)**: `SourceElement.Row.cost` is `int[]` with per-tier cost: `cost[0]` = tier 1, `cost[1]` = tier 2, etc. `FEAT.CostLearn` returns `source.cost.TryGet(Value - 1)` (index by current tier). For multi-ID tier chains (e.g. mutations), `aliasParent` points from **child to parent**; `SetMutation()` clears the parent feat before setting the child. No predefined tier-order list; hierarchy is from `aliasParent` traversal.
-- **`Feat.Apply(int a, ElementContainer owner, bool hint = false)`** - Applies a feat's effects:
-  - **Important**: This modifies OTHER elements' `vBase` via `owner.ModBase()`, NOT the feat's own `vBase`
-  - If `!hint && a > 0 && owner.Chara != null`: Sets feat's own `vPotential = owner.Chara.LV` (feat's potential, not other elements)
-  - Switches on feat ID to apply specific effects:
-    - Most feats call `ModBase(ele, value, hide: false)` which calls `owner.ModBase(ele, value)` to modify OTHER elements' `vBase`
-    - Some feats call `ModAttribute(ele)` which calls `ModBase()` and `ModPotential()` on OTHER elements
-    - Some feats only set `featRef[]` strings for UI display (no stat modifications)
-  - Example: Feat ID 1610 calls `ModBase(60, a * 4, hide: false)` → modifies element 60's `vBase` (STR), not the feat's `vBase`
-  - **Note**: The feat's own value is stored in its `vBase` (set by `SetFeat()`), but `Apply()` modifies OTHER elements' `vBase`
-
-### Mutations / Ether Diseases
-
-- **`Chara.MutateRandom(int vec = 0, int tries = 100, bool ether = false, BlessedState state = BlessedState.Normal)`** - Applies or removes random mutations:
-  - **Early return**: If `!ether && vec >= 0 && HasElement(406)` (resistance), 80% chance to resist and return false
-  - **Mutation selection**: Filters elements by category (`ether ? "ether" : "mutation"`) and excludes those with "noRandomMutation" tag
-  - **Removal logic** (when `vec < 0 && ether`): On first try (`i == 0`), if `c_corruptionHistory != null && Count > 0`, uses `c_corruptionHistory.LastItem()` to get most recent mutation ID and removes it from list (LIFO stack behavior)
-  - **Value calculation**:
-    - If element exists: `num = element.Value + vec` (or random ±1 if `vec == 0`)
-    - Clamps `num` to `element.source.max - 1` if exceeds max
-    - Skips if mutation would decrease when `vec > 0` (only allows increases when adding)
-  - **Mutation application**: Calls `SetFeat(row.id, num)` to apply/update the mutation feat
-  - **Tracking** (when `vec > 0 && ether && flag2`): Creates `c_corruptionHistory` list if null, adds `row.id` to track mutation order
-  - Returns `true` if mutation was applied, `false` if nothing happened after all tries
-- **`Chara.ModCorruption(int a)`** - Orchestrator for Ether Disease progression/curing:
-  - **Early return**: If `a > 0` and character has high ether resistance (`Evalue(962) >= 25` or `ResistLv(962) > 0` with random chance), returns early
-  - **Resistance reduction**: If `a > 0` and character has element 412, reduces `a` based on resistance: `a = a * 100 / Max(100 + element412 * 2, 10)`
-  - **Threshold calculation**: `num3 = (corruption + a) / 100 - corruption / 100` (number of thresholds crossed)
-  - **Mutation triggers**: For each threshold crossed (`Mathf.Abs(num3)` times), calls `MutateRandom((num3 > 0) ? 1 : (-1), 100, ether: true)`
-    - Positive threshold = adds mutation (`vec = 1`)
-    - Negative threshold = removes mutation (`vec = -1`, uses `c_corruptionHistory` LIFO)
-  - **Corruption update**: After mutations, updates `corruption += a`
-  - **Ether sum recalculation**: Calculates sum of all ether elements (`category == "ether"`), then **sets `corruption = etherSum * 100 + corruption % 100`** (overwrites corruption with ether sum \* 100 + remainder)
-- **Curing Ether Disease**:
-  - **Method 1**: Call `ModCorruption(-100000)` which triggers `MutateRandom(vec: -1, ether: true)` to remove mutations via `c_corruptionHistory` LIFO stack
-  - **Method 2**: `CoreDebug.Fix_EtherDisease()` - Debug function that:
-    1. Calls `ModCorruption(-100000)` to reset corruption and remove mutations
-    2. Creates fresh character via `CharaGen.Create("chara")` with same race/job (`ChangeRace()`, `ChangeJob()`)
-    3. Compares fresh character's `vBase` with current character's `vBase` for attribute elements (`category == "attribute"`)
-    4. If fresh `vBase > current vBase` (current is damaged), fixes it via `elements.ModBase(id, value.vBase - orCreateElement.vBase + 1)` - adds +1 extra to ensure it's at least as high as fresh character
-  - **Temporary modifiers**: `ModTempElement()` with negative values reduces temporary stat penalties. If `vBase` reaches 0, element is removed from `tempElements`. Temporary modifiers are separate from permanent mutations - mutations modify main `elements.vBase` via `SetFeat()`, while temp modifiers use `tempElements.vBase`.
-
-### Equipment
-
-- **`CharaBody.Equip(Thing thing, BodySlot slot = null, bool msg = true)`** - Equips an item:
-  1. Finds appropriate slot via `GetSlot(thing.category.slot)` (or `GetSlot(thing.category.slot, onlyEmpty: false)` if no empty slot)
-  2. Validates slot matches `thing.category.slot` and checks `IsEquippable()`
-  3. If slot already has item: Unequips existing item first (calls `Unequip(slot, refresh: false)`)
-  4. Unequips `thing` from any other slot if already equipped (calls `Unequip(thing, refresh: false)`)
-  5. If `thing.parent != owner`: Calls `owner.AddCard(thing)` to transfer ownership
-  6. Sets `slot.thing = thing` and `thing.c_equippedSlot = slot.index + 1`
-  7. **Critical**: Calls `thing.elements.SetParent(owner)` - this links equipment elements to character via `ModLink()`
-  8. Calls `thing.trait.OnEquip(owner, onSetOwner: false)` for trait effects
-  9. If PC faction: Calls `faction.charaElements.OnEquip(owner, thing)` for faction bonuses (global elements only)
-  10. Calls `owner.SetTempHand()`, `owner.Refresh()` if character is created, and UI refresh if PC
-- **`CharaBody.Unequip(BodySlot slot, bool refresh = true)`** - Unequips an item:
-  1. Gets `thing` from `slot.thing` (returns early if null)
-  2. If PC faction: Calls `faction.charaElements.OnUnequip(owner, thing)` to remove faction bonuses
-  3. **Critical**: Calls `thing.elements.SetParent()` (no parent) - this unlinks equipment elements via `ModLink()` with negative values
-  4. Calls `thing.trait.OnUnequip(owner)`
-  5. Sets `thing.c_equippedSlot = 0` and `slot.thing = null`
-  6. Calls `owner.Refresh()` and UI refresh if needed
-- **`ElementContainer.SetParent(ElementContainer newParent = null)`** - Establishes parent-child relationship:
-  - **When removing old parent** (if `parent != null`): For each element, if `!LimitLink || value.CanLink(this)`, calls `parent.ModLink(value.id, -(value.vBase + value.vSource))` - removes old contributions
-  - **When setting new parent** (if `newParent != null`): For each element, if `!LimitLink || value2.CanLink(this)`, calls `newParent.ModLink(value2.id, value2.vBase + value2.vSource)` - adds new contributions
-  - **Result**: Equipment bonuses modify `Element.vLink` in the character's main `elements` container via `ModLink()`
-  - **Note**: Uses `vBase + vSource` (total element value), not just `vBase`
-- **`Element.Value` calculation**: `Value = ValueWithoutLink + vLink + ValueBonus(owner)`
-  - Equipment bonuses contribute via `vLink` (from `SetParent` → `ModLink`)
-  - `ValueBonus` is used for faction bonuses and special cases (returns 0 for base `ElementContainer`)
-- **UI Display** (`Element.BonusInfo.WriteNote()`): Reads directly from `body.slots`:
-  - Iterates `c.body.slots`, for each slot with `thing != null` and `slot.elementId != 44` (not backpack):
-    - Gets `slot.thing.elements.GetOrCreateElement(id)` and sums `orCreateElement.Value`
-    - Excludes global elements (`!orCreateElement.IsGlobalElement`)
-  - Displays sum as "Equipment +X" line
-  - **The UI does NOT read from `vLink` for equipment display** - it calculates directly from `body.slots`
-- **Faction Equipment Bonuses** (`ElementContainerFaction.OnEquip(Thing t)`):
-  - Checks `IsEffective(t)` (deity matching)
-  - For each element in equipment: If `value.IsGlobalElement`, calls `ModBase(value.id, value.Value)` on faction container
-  - Also sets `vExp = value.vExp` to preserve experience
-  - Sets `isDirty = true` and calls `CheckDirty()` to refresh all PC faction characters
-  - Global elements from equipment are added to faction's `vBase` directly (separate from parent-child linking mechanism)
-
-### Conditions
-
-- **`Chara.AddCondition<T>(int p = 100, bool force = false)`** - Adds a condition by type. Calls `AddCondition(typeof(T).Name, p, force)`.
-- **`Chara.AddCondition(string id, int p = 100, bool force = false)`** - Adds a condition by ID. Creates condition via `Condition.Create(id, p)` then calls `AddCondition(Condition c, force)`.
-- **`Chara.AddCondition(Condition c, bool force = false)`** - Adds a condition object:
-  1. Sets `c.owner = this`
-  2. Checks resistances and applies reduction if needed
-  3. Checks negate list (conditions that prevent this condition)
-  4. Calculates duration via `c.EvaluateTurn(c.power)`
-  5. Handles stacking/overriding if condition already exists
-  6. Adds to `conditions` list
-  7. Calls `c.SetOwner(this)` which creates `ElementContainerCondition` if `UseElements` is true, sets elements via `SetBase()`, then **calls `elements.SetParent(owner)`** - this links condition's elements to character's `vLink`
-  8. Calls `c.OnAdded()` hook and `owner.Refresh()` if needed
-- **`Chara.RemoveCondition<T>()`** - Removes condition by type. Finds condition in `conditions` list and calls `condition.Kill()`.
-- **`Condition.Kill(bool silent = false)`** - Removes condition:
-  1. Sets `value = 0` and removes from `owner.conditions` list
-  2. Plays end effect and message (if not silent)
-  3. **If `elements != null`: Calls `elements.SetParent()` (no parent)** - this unlinks condition's elements from character's `vLink`
-  4. Calls `OnRemoved()` hook and refreshes emo icon
-- **`Chara.TickConditions()`** - Called each turn to update conditions. Iterates `conditions` list and calls `condition.Tick()` for each.
-- **`Condition.Tick()`** - Default implementation calls `Mod(-1)` to decrease `value` by 1 each turn. When `value <= 0`, `OnValueChanged()` calls `Kill()` to remove condition.
-- **Condition element contributions**: Conditions work similarly to equipment - when added with `UseElements = true`, they create `ElementContainerCondition`, set elements via `SetBase()`, and link to character's `vLink` via `SetParent(owner)`. When removed, they unlink via `SetParent()` (no parent). Their contributions are separate from `tempElements` - conditions have their own container system.
-
-### Training / Permanent Bonuses
+### Training / Experience
 
 - **`ElementContainer.Train(int ele, int a = 10)`** - Initiates training for an element. Calls `OnTrain(ele)` (virtual hook, can be overridden), then calls `ModTempPotential(ele, a)` to increase temporary potential. Training itself doesn't directly increase `vBase` - it increases potential which affects experience gain rate.
 - **`ElementContainer.ModTempPotential(int ele, int v, int threshMsg = 0)`** - Modifies temporary potential. Gets/creates element via `GetOrCreateElement(ele)`, modifies `orCreateElement.vTempPotential += v` (clamped to max 1000), then calls `OnModTempPotential(orCreateElement, v, threshMsg)` hook. Higher potential = faster experience gain (affects `ModExp` calculations).
@@ -333,7 +175,7 @@
   - **Experience modifiers** (only applied when `a > 0f`):
     1. **Days together bonus**: If `!chain && Card != null && Card.isChara`, multiplies `a` by `GetDaysTogetherBonus() / 100` (bonus based on how long character has been in party)
     2. **UseExpMod formula**: If `element.UseExpMod` is true, applies formula: `a = a * Clamp(UsePotential ? Potential : 100, 10, 1000) / (100 + Max(0, ValueWithoutLink) * 25)` (higher potential = more exp, higher value = less exp). After calculation, probabilistically rounds up fractional part: `if (rndf(1f) < a % 1f) { a += 1f; }`
-    3. **Parent factor**: If `!chain && element.source.parentFactor > 0f && Card != null && !element.source.aliasParent.IsEmpty()`, gets parent element and recursively calls `ModExp(parent.id, Clamp(a * parentFactor / 100f, 1f, 1000f), chain: true)` to grant experience to parent (prevents infinite loops via `chain: true`)
+    3. **Parent factor**: If `!chain && element.source.parentFactor > 0f && Card != null && !element.source.aliasParent.IsEmpty()`, gets parent element via `element.GetParent(Card)`, checks `element2.CanGainExp`, then recursively calls `ModExp(parent.id, Clamp(a * parentFactor / 100f, 1f, 1000f), chain: true)` to grant experience to parent (prevents infinite loops via `chain: true`)
   - **Experience addition**: Adds to `element.vExp += (int)a` (truncates float to int)
   - **Level Up** (when `vExp >= ExpToNext`):
     1. Calculates overflow: `num = vExp - ExpToNext`
@@ -351,6 +193,120 @@
 - **`Element.ExpToNext`** (property) - Experience required for next level: Default `1000` (can be overridden by element source)
 - **`Element.CostTrain`** (property) - Cost to train: `Max((ValueWithoutLink / 10 + 5) * (100 + vTempPotential) / 500, 1)`. Higher `ValueWithoutLink` = more expensive. Higher `vTempPotential` = more expensive.
 - **`ElementContainer.Learn(int ele, int v = 1)`** - Learns a new element/ability. Directly calls `ModBase(ele, v)` to set initial `vBase` value, then calls `OnLearn(ele)` hook. Used for learning new abilities/spells, not training existing ones. This is separate from the training system - `Learn()` directly sets `vBase`, while training increases `vBase` gradually via experience.
+
+### Temporary Modifiers
+
+- **`Chara.ModTempElement(int ele, int a, bool naturalDecay = false, bool onlyRenew = false)`** - Modifies elements within `tempElements`. Used for afflictions, temporary stat changes, etc.
+  - **Early return**: If `a < 0` and `!naturalDecay` and character has "sustain\_" element for this stat, returns early (sustain prevents negative temp modifiers, but natural decay bypasses sustain)
+  - **Container creation**: If `tempElements == null`, creates new `ElementContainer()` and calls `tempElements.SetParent(this)` to link it to character
+  - **Feat 1215 bonus**: If character has element 1215 and `a > 0`, multiplies `a` by 150/100 (50% bonus to positive temp modifiers)
+  - **Clamping logic**: Calculates limits based on `elements.ValueWithoutLink(ele)`:
+    - Positive limit: `num3 = (Mathf.Abs(ValueWithoutLink) + 100) / (hasFeat1215 ? 2 : 4)`
+    - Negative limit: `num4 = -ValueWithoutLink - 100`
+    - If `onlyRenew=true`: Adjusts limits (`num3 = Min(a, num3)`, `num4 = Max(a, -num2 / 3)`)
+    - Clamps `a` before calling `ModBase()`: If `a > 0 && (tempBase + a) > num3`, reduces `a` to fit. If `a < 0 && (tempBase + a) < num4`, increases `a` to fit.
+  - **Modification**: Calls `tempElements.ModBase(ele, a)` to modify `vBase` in the `tempElements` container
+  - **Cleanup**: If element's `vBase` becomes 0 after modification, removes element from `tempElements`. If `tempElements` becomes empty, sets `tempElements = null`.
+  - **Note**: This is what creates the "Temporary Weakness -X" display in the UI. If disease progression makes it worse, it would call `ModTempElement()` again with a larger negative value.
+
+## Character Progression
+
+### Leveling / Feat Points
+
+- **`Card.LV`** (int property) - Character level. Stored in `_ints[25]`.
+- **`Card.exp`** (int property) - Character experience points toward next level. Stored in `_ints[26]`.
+- **`Card.feat`** (int property) - Unspent feat points. Stored in `_ints[24]`. Incremented by 1 each `LevelUp()` call.
+- **`Player.totalFeat`** (int field, serialized) - Total feat points ever earned by PC through leveling. Incremented by 1 each time `Card.LevelUp()` is called on the PC. Represents lifetime count, not unspent count. Used in the mod to calculate target level: `targetLevel = totalFeat + 1`.
+- **`Card.LevelUp()`** - Levels up the character:
+  1. If PC and demo mode with `totalFeat >= 5`: blocks and returns
+  2. If PC: increments `Player.totalFeat++`
+  3. Always: `feat++` and `LV++`
+  4. Plays level-up message, sound, and effect
+  5. Auto-upgrades certain feats based on LV thresholds (feat 1415 for all characters, feat 1274 for PC only, feat 1644 for NPC mutants)
+  - **Note**: Does NOT directly grant HP, change stats, or modify elements — it only grants 1 feat point and increments LV. HP increase comes from `MaxHP` being a formula that includes `LV`.
+
+### Vital Stats (HP / Mana / Stamina)
+
+- **`Card.hp`** (int property) - Current hit points. Stored in `_ints[14]`.
+- **`Chara.MaxHP`** (int property, override) - Calculated on-demand:
+  - Formula: `((END*2 + STR + WIL/2) * Min(LV, 25)/25 + END + 10) * Evalue(60)/100 * rarityOrSoloBonus/100`
+  - `Evalue(60)` = "Life" element (percentage multiplier, default 100)
+  - Non-PC-faction: bonus from rarity (`100 + rarity * 300`)
+  - PC: bonus from `lastEmptyAlly * Evalue(1646)` (solo/loneliness feat)
+  - Clamped between 1 and 1 billion
+- **`Chara.mana`** (Stats property) - Mana resource. Flyweight accessor backed by `_cints[16]`. Has `.value` and `.max`.
+  - **`StatsMana.max`**: `((MAG*2 + WIL + LER/2) * Min(LV, 25)/25 + MAG + 10) * (Evalue(61) - Evalue(93))/100 * rarityOrSoloBonus/100`
+  - `Evalue(61)` = "Mana" element, `Evalue(93)` subtracted from it
+  - Non-PC-faction: rarity bonus is `100 + rarity * 250` (differs from MaxHP's `* 300`)
+  - Clamped between 1 and 100,000,000 (100M, not 1B like MaxHP)
+- **`Chara.stamina`** (Stats property) - Stamina resource. Flyweight accessor backed by `_cints[12]`. Has `.value` and `.max`.
+  - **`StatsStamina.max`**: `_maxStamina * Evalue(62) / 100`
+  - `Evalue(62)` = "Stamina" element (percentage multiplier)
+- **`Chara.CalculateMaxStamina()`** - Recalculates `_maxStamina` field:
+  1. Starts with `END` (Endurance attribute value)
+  2. Sums all "skill" category elements: PC uses `vBase`, non-PC uses `ValueWithoutLink`
+  3. Applies `EClass.curve(sum, 30, 10, 60)` (diminishing returns curve)
+  4. Floor of 10, then adds 15. Result stored in `_maxStamina`
+  - Called during `OnCreate`, `SetLv`, and after `SetFeat` (via explicit call in the stat import flow)
+
+### Feats / Traits
+
+- **`Chara.SetFeat(int id, int value = 1, bool msg = false)`** - Sets a feat/trait:
+  1. Gets existing feat: `elements.GetElement(id) as Feat`
+  2. If feat exists and `feat.Value > 0`:
+     - **Early return**: If `value == feat.Value`, returns immediately (no-op)
+     - Calls `feat.Apply(-feat.Value, elements)` to remove old effects (reverses previous modifications)
+  3. Sets feat's own `vBase` via `elements.SetBase(id, value - (feat?.vSource ?? 0))` - stores only the delta above race/job so that `Value` = `vBase + vSource` = desired total tier. There is no separate "demote" API; use `SetFeat(id, lowerValue)` to downgrade.
+  4. If `feat.Value != 0`: Calls `feat.Apply(feat.Value, elements)` to apply new effects
+  5. Calls `Refresh()` and `CalculateMaxStamina()` if game is started
+  6. If `msg=true`: Displays message about gaining/changing feat, then calls `elements.CheckSkillActions()`
+- **Feat tier and cost (disassembly)**: `SourceElement.Row.cost` is `int[]` with per-tier cost: `cost[0]` = tier 1, `cost[1]` = tier 2, etc. `FEAT.CostLearn` returns `source.cost.TryGet(Value - 1)` (index by current tier). For multi-ID tier chains (e.g. mutations), `aliasParent` points from **child to parent**; `SetMutation()` clears the parent feat before setting the child. No predefined tier-order list; hierarchy is from `aliasParent` traversal.
+- **`Feat.Apply(int a, ElementContainer owner, bool hint = false)`** - Applies a feat's effects (returns `List<string>`):
+  - **Mod event**: Publishes `"elin.feat.apply"` via `BaseModManager.PublishEvent()` before applying effects, allowing other mods to intercept and modify the `a` parameter
+  - **Important**: This modifies OTHER elements' `vBase` via `owner.ModBase()`, NOT the feat's own `vBase`
+  - If `!hint && a > 0 && owner.Chara != null`: Sets feat's own `vPotential = owner.Chara.LV` (feat's potential, not other elements)
+  - Switches on feat ID to apply specific effects:
+    - Most feats call `ModBase(ele, value, hide: false)` which calls `owner.ModBase(ele, value)` to modify OTHER elements' `vBase`
+    - Some feats call `ModAttribute(ele)` which calls `ModBase()` and `ModPotential()` on OTHER elements
+    - Some feats only set `featRef[]` strings for UI display (no stat modifications)
+  - Example: Feat ID 1610 calls `ModBase(60, a * 4, hide: false)` → modifies element 60's `vBase` (STR), not the feat's `vBase`
+  - **Note**: The feat's own value is stored in its `vBase` (set by `SetFeat()`), but `Apply()` modifies OTHER elements' `vBase`
+
+### Mutations / Ether Diseases
+
+- **`Chara.MutateRandom(int vec = 0, int tries = 100, bool ether = false, BlessedState state = BlessedState.Normal)`** - Applies or removes random mutations:
+  - **Early return**: If `!ether && vec >= 0 && HasElement(406)` (resistance), 80% chance to resist and return false
+  - **Mutation selection**: Filters elements by category (`ether ? "ether" : "mutation"`) and excludes those with "noRandomMutation" tag
+  - **Removal logic** (when `vec < 0 && ether`): On first try (`i == 0`), if `c_corruptionHistory != null && Count > 0`, uses `c_corruptionHistory.LastItem()` to get most recent mutation ID and removes it from list (LIFO stack behavior)
+  - **Skip conditions**:
+    - When `vec > 0`: Skips mutation 1563 if `corruption < 300`; skips mutation 1562 if `corruption < 1000` and `IsPowerful`; skips if element already at `row.max`
+    - When `vec < 0`: Skips if element doesn't exist or `element.Value <= 0`
+  - **BlessedState filtering**: When `vec > 0` and state is Blessed, negative mutations are skipped; when Cursed, positive mutations are skipped (and vice versa for `vec < 0`)
+  - **aliasParent fallback**: If selected mutation element doesn't exist on character but has a non-empty `aliasParent` and character has the parent element, switches to the parent mutation row instead
+  - **Value calculation**:
+    - If element is null (new mutation): `num = 1`
+    - If element exists: `num = element.Value + vec` (or random ±1 if `vec == 0`)
+    - Clamps `num` to `element.source.max - 1` if `num` strictly exceeds `source.max`
+  - **Mutation application**: Calls `SetFeat(row.id, num)` to apply/update the mutation feat
+  - **Tracking** (when `flag2 && ether`, where `flag2` = mutation tier increased): Creates `c_corruptionHistory` list if null, adds `row.id` to track mutation order. Note: `flag2` defaults to `true` for new mutations and is set to `num > element.Value` for existing ones, so in practice only tracks when mutation tier goes up.
+  - Returns `true` if mutation was applied, `false` if nothing happened after all tries
+- **`Chara.ModCorruption(int a)`** - Orchestrator for Ether Disease progression/curing:
+  - **Early return**: If `a > 0` and character has high ether resistance (`Evalue(962) >= 25` or `ResistLv(962) > 0` with random chance), returns early
+  - **Resistance reduction**: If `a > 0` and character has element 412, reduces `a` using float division with probabilistic rounding: `float num2 = (float)a * 100f / (float)Max(100 + element412 * 2, 10); a = (int)num2 + (rndf(1f) < num2 % 1f ? 1 : 0)`
+  - **Threshold calculation**: `num3 = (corruption + a) / 100 - corruption / 100` (number of thresholds crossed)
+  - **Mutation triggers**: For each threshold crossed (`Mathf.Abs(num3)` times), calls `MutateRandom((num3 > 0) ? 1 : (-1), 100, ether: true)`
+    - Positive threshold = adds mutation (`vec = 1`)
+    - Negative threshold = removes mutation (`vec = -1`, uses `c_corruptionHistory` LIFO)
+  - **Corruption update**: After mutations, updates `corruption += a`
+  - **Ether sum recalculation**: Calculates sum of all ether elements (`category == "ether"`), then **sets `corruption = etherSum * 100 + corruption % 100`** (overwrites corruption with ether sum \* 100 + remainder)
+- **Curing Ether Disease**:
+  - **Method 1**: Call `ModCorruption(-100000)` which triggers `MutateRandom(vec: -1, ether: true)` to remove mutations via `c_corruptionHistory` LIFO stack
+  - **Method 2**: `CoreDebug.Fix_EtherDisease()` - Debug function that:
+    1. Calls `ModCorruption(-100000)` to reset corruption and remove mutations
+    2. Creates fresh character via `CharaGen.Create("chara")` with same race/job (`ChangeRace()`, `ChangeJob()`)
+    3. Compares fresh character's `vBase` with current character's `vBase` for attribute elements (`category == "attribute"`)
+    4. If fresh `vBase > current vBase` (current is damaged), fixes it via `elements.ModBase(id, value.vBase - orCreateElement.vBase + 1)` - adds +1 extra to ensure it's at least as high as fresh character
+  - **Temporary modifiers**: `ModTempElement()` with negative values reduces temporary stat penalties. If `vBase` reaches 0, element is removed from `tempElements`. Temporary modifiers are separate from permanent mutations - mutations modify main `elements.vBase` via `SetFeat()`, while temp modifiers use `tempElements.vBase`.
 
 ### Race / Job Changes
 
@@ -379,34 +335,181 @@
     1. Gets or creates element via `GetOrCreateElement(item.Key)`
     2. If element category is "skill": Modifies `vSourcePotential` via `GetSourcePotential(value) * num`
     3. Calculates final value via `GetSourceValue(value, lv, type)` (level-scaled for Chara, encounter-scaled for others, fixed for Fixed)
-    4. **Modifies `Element.vSource`** by calculated amount: `orCreateElement.vSource += (int)num2 * num` (clamped to 99999999)
+    4. **Modifies `Element.vSource`**: `long num2 = GetSourceValue(value, lv, type) * num` (where `num` is the invert multiplier ±1), then `orCreateElement.vSource += (int)num2` (clamped to 99999999)
     5. If `applyFeat=true` and element is a `Feat`: Calls `Feat.Apply((int)num2, this)` which modifies OTHER elements' `vBase` via `ModBase()`
   - Resets random seed
   - **Critical**: Race/Job bonuses modify `Element.vSource` for ALL elements in the map. The feat's own value goes to `vSource`. If `applyFeat=true`, `Feat.Apply()` is called AFTER modifying `vSource`, which then modifies OTHER elements' `vBase` (not the feat's own `vBase`).
-- **`Feat.Apply(int a, ElementContainer owner, bool hint = false)`** - Applies feat effects (called from `ApplyElementMap` or `SetFeat`):
+- **`Feat.Apply(int a, ElementContainer owner, bool hint = false)`** - Applies feat effects (called from `ApplyElementMap` or `SetFeat`), returns `List<string>`:
+  - **Mod event**: Publishes `"elin.feat.apply"` via `BaseModManager.PublishEvent()` before applying effects, allowing other mods to intercept and modify the `a` parameter
   - **Important**: This modifies OTHER elements' `vBase`, NOT the feat's own `vBase`
   - If `hint=false` and `a > 0`: Sets `vPotential = owner.Chara.LV`
   - Switches on feat ID to apply specific effects via `ModBase()` on OTHER elements
   - Example: Feat ID 1610 calls `ModBase(60, a * 4)` - modifies element 60's `vBase`, not the feat's `vBase`
-- **`Chara.SetFeat(int id, int value = 1, bool msg = false)`** - Sets a feat directly:
-  1. Gets existing feat and removes old effects: `feat.Apply(-feat.Value, elements)`
-  2. Sets feat's own `vBase` via `elements.SetBase(id, value - (feat?.vSource ?? 0))` - sets `Element.vBase` directly
-  3. Applies new feat effects: `feat.Apply(feat.Value, elements)` - modifies OTHER elements' `vBase`
-  - **Note**: When set directly, the feat's own value is in `vBase`, but its effects modify OTHER elements' `vBase`
 - **`Card.ChangeMaterial(SourceMaterial.Row row, bool ignoreFixedMaterial = false)`** - Changes character material:
   - Calls `ApplyMaterial(remove: true)` to remove old material bonuses
   - Sets `_material = row`, `idMaterial = row.id`, `decay = 0`
   - Marks `dirtyWeight = true` and calls `SetDirtyWeight()` if PC
   - Calls `ApplyMaterial()` to apply new material bonuses via `ApplyMaterialElementMap()` → `ApplyElementMap()`
 - **`Chara.InitStats(bool onDeserialize = false)`** - Initial stat setup:
-  - Calls `ApplyRace()` and `ApplyJob()` to apply initial race/job bonuses (modify `vSource`)
-  - Calls `ChangeMaterial()` for initial material
+  - If not deserializing: Sets initial `_cints` values (stat constants like hunger, stamina thresholds)
+  - Iterates conditions calling `condition.SetOwner(this, onDeserialize)` to re-link condition elements
+  - **Note**: Does NOT call `ApplyRace()` or `ApplyJob()` — those are called separately during character creation
+- **`Player.RefreshDomain()`** - Rebuilds `domains` list from `EClass.pc.job.domain[]` array (stride-2 pairs of `[elementId, value, ...]`). Should be called after `ChangeRace()`/`ChangeJob()` to sync the player's domain skills with their new job.
 
-## Orchestrators
+## Equipment & Items
 
-**Summary**: The stat system uses **on-demand calculation** with **reactive hooks** for UI updates. There is **no single "recalculate all stats" function** - stat values are calculated dynamically when accessed via properties, and UI updates are triggered through targeted hooks when values change.
+### Equip / Unequip
 
-### Core Refresh/Recalculate Functions
+- **`CharaBody.Equip(Thing thing, BodySlot slot = null, bool msg = true)`** - Equips an item:
+  1. Finds appropriate slot via `GetSlot(thing.category.slot)` (or `GetSlot(thing.category.slot, onlyEmpty: false)` if no empty slot)
+  2. Validates slot matches `thing.category.slot` and checks `IsEquippable()`
+  3. If slot already has item: Unequips existing item first (calls `Unequip(slot, refresh: false)`)
+  4. Unequips `thing` from any other slot if already equipped (calls `Unequip(thing, refresh: false)`)
+  5. If `thing.parent != owner`: Calls `owner.AddCard(thing)` to transfer ownership
+  6. Sets `slot.thing = thing` and `thing.c_equippedSlot = slot.index + 1`
+  7. **Critical**: Calls `thing.elements.SetParent(owner)` - this links equipment elements to character via `ModLink()`
+  8. Calls `thing.trait.OnEquip(owner, onSetOwner: false)` for trait effects
+  9. If `EClass.pc != null`: Calls `faction.charaElements.OnEquip(owner, thing)` for faction bonuses (global elements only) — note: triggers for any character's equipment change, not just PC faction members
+  10. Calls `owner.SetTempHand()`, `owner.Refresh()` if character is created, and UI refresh if PC
+- **`CharaBody.Unequip(BodySlot slot, bool refresh = true)`** - Unequips an item:
+  1. Gets `thing` from `slot.thing` (returns early if null)
+  2. If `EClass.pc != null`: Calls `faction.charaElements.OnUnequip(owner, thing)` to remove faction bonuses — note: triggers for any character, not just PC faction members
+  3. **Critical**: Calls `thing.elements.SetParent()` (no parent) - this unlinks equipment elements via `ModLink()` with negative values
+  4. Calls `thing.trait.OnUnequip(owner)`
+  5. Sets `thing.c_equippedSlot = 0` and `slot.thing = null`
+  6. Calls `owner.Refresh()` and UI refresh if needed
+- **`ElementContainer.SetParent(ElementContainer newParent = null)`** - Establishes parent-child relationship:
+  - **When removing old parent** (if `parent != null`): For each element, if `!LimitLink || value.CanLink(this)`, calls `parent.ModLink(value.id, -(value.vBase + value.vSource))` - removes old contributions
+  - **When setting new parent** (if `newParent != null`): For each element, if `!LimitLink || value2.CanLink(this)`, calls `newParent.ModLink(value2.id, value2.vBase + value2.vSource)` - adds new contributions
+  - **Result**: Equipment bonuses modify `Element.vLink` in the character's main `elements` container via `ModLink()`
+  - **Note**: Uses `vBase + vSource` (total element value), not just `vBase`
+- **`Element.Value` calculation**: `Value = ValueWithoutLink + vLink + ValueBonus(owner)`
+  - Equipment bonuses contribute via `vLink` (from `SetParent` → `ModLink`)
+  - `ValueBonus` is used for faction bonuses and special cases (returns 0 for base `ElementContainer`)
+- **Faction Equipment Bonuses** (`ElementContainerFaction.OnEquip(Thing t)`):
+  - Checks `IsEffective(t)` (deity matching)
+  - For each element in equipment: If `value.IsGlobalElement`, calls `ModBase(value.id, value.Value)` on faction container
+  - Also sets `vExp = value.vExp` to preserve experience
+  - Sets `isDirty = true` and calls `CheckDirty()` to refresh all PC faction characters
+  - Global elements from equipment are added to faction's `vBase` directly (separate from parent-child linking mechanism)
+
+### Item Material Elements
+
+- **`Card.ApplyMaterialElements(bool remove)`** - Base class is a no-op. Overridden by `Thing`:
+  - If item is equipped: temporarily detaches parent link via `elements.SetParent()`, applies material element map, then reattaches via `elements.SetParent(chara)` — prevents spurious `vLink` propagation during modification
+  - Delegates to `ElementContainer.ApplyMaterialElementMap(this, remove)` which iterates `material.elementMap` and modifies `vSource` on the Thing's elements
+  - **Separate from `ApplyMaterial()`**: `ApplyMaterial()` handles the full material change (DV/PV/damage, fireproof, etc.) and calls `ApplyMaterialElements` internally. `ApplyMaterialElements` handles only the material's element bonuses.
+  - **During deserialization**: Called at `Card._OnDeserialized` with `remove: false` to restore material element bonuses after loading
+  - **Used by mod**: Called during item restoration to apply material `vSource` bonuses after setting `vBase` from exported data
+
+### Body Parts
+
+- **`CharaBody.AddBodyPart(int ele, Thing thing = null)`** - Creates a new `BodySlot` and appends to `slots`:
+  - Sets `.elementId = ele`, `.index = slots.Count`
+  - If element 35 (hand): assigns to `slotMainHand` first, then `slotOffHand`
+  - If element 41 (ranged): assigns to `slotRange`
+  - Does NOT trigger equip refresh or element modification — just adds the slot
+- **`CharaBody.RefreshBodyParts()`** - Rebuilds internal slot references (main hand, off hand, range) from the current `slots` list. Should be called after adding/removing body parts.
+
+## Conditions & Curing
+
+### Condition Access
+
+- **`BaseCondition.GetElementContainer()`** (virtual method) - Returns `ElementContainer` for condition's stat contributions:
+  - Base implementation returns `elements` (the condition's `ElementContainerCondition`)
+  - Can be overridden (e.g., `ConDisease.GetElementContainer()` returns a different container)
+  - Returns `null` if condition has no element contributions (`UseElements = false`)
+  - **Used by**: `BonusInfo.WriteNote()` to get condition contributions, `WidgetStatsBar` to calculate stat display
+- **`Chara.HasCondition<T>()`** - Checks if character has a condition of type `T`:
+  - Iterates through `conditions` list
+  - Returns `true` if any condition is of type `T`, `false` otherwise
+- **`Chara.GetCondition<T>()`** - Gets condition of type `T` from character:
+  - Iterates through `conditions` list
+  - Returns first condition of type `T`, or `null` if not found
+- **`Chara.RemoveCondition<T>()`** - Removes condition of type `T`:
+  - Finds condition in `conditions` list
+  - Calls `condition.Kill()` to remove it
+
+### Condition Lifecycle
+
+- **`Chara.AddCondition<T>(int p = 100, bool force = false)`** - Adds a condition by type. Calls `AddCondition(typeof(T).Name, p, force)`.
+- **`Chara.AddCondition(string id, int p = 100, bool force = false)`** - Adds a condition by ID. Creates condition via `Condition.Create(id, p)` then calls `AddCondition(Condition c, force)`.
+- **`Chara.AddCondition(Condition c, bool force = false)`** - Adds a condition object:
+  1. Sets `c.owner = this`
+  2. Checks resistances and applies reduction if needed
+  3. Calls `c.power = c.EvaluatePower(c.power)` — returns null if power becomes 0
+  4. Checks negate list (conditions that prevent this condition)
+  5. Calculates duration via `c.EvaluateTurn(c.power)`
+  6. Handles stacking/overriding if condition already exists
+  7. Checks `TryNullify(c)` against all existing conditions — returns null if any existing condition nullifies the new one
+  8. Adds to `conditions` list; calls `AddResistCon(c)` if `CanGainConResist`
+  9. Calls `c.SetOwner(this)` which creates `ElementContainerCondition` if `UseElements` is true, sets elements via `SetBase()`, then **calls `elements.SetParent(owner)`** - this links condition's elements to character's `vLink`
+  10. Calls `c.Start()` (which calls `OnBeforeStart()`, `SetPhase()`, `OnStart()`, `OnStartOrStack()`, `PlayEffect()`)
+  11. Calls `SetDirtySpeed()`, then `owner.Refresh()` if `c.ShouldRefresh`
+  12. If `c.CancelAI`: calls `ai.Cancel()`. If `c.ConsumeTurn` and IsPC: calls `EClass.player.EndTurn()`
+  13. If `c.SyncRide` and character has ride/parasite: adds same condition to ride and parasite
+- **`Chara.RemoveCondition<T>()`** - Removes condition by type. Finds condition in `conditions` list and calls `condition.Kill()`.
+- **`Condition.Kill(bool silent = false)`** - Removes condition:
+  1. Sets `value = 0` and removes from `owner.conditions` list
+  2. Plays end effect and message (if not silent)
+  3. **If `elements != null`: Calls `elements.SetParent()` (no parent)** - this unlinks condition's elements from character's `vLink`
+  4. Calls `OnRemoved()` hook and refreshes emo icon
+  5. Calls `owner.SetDirtySpeed()`, then `owner.Refresh()` if `ShouldRefresh`
+- **`Chara.TickConditions()`** - Called each turn to update conditions. Iterates `conditions` list and calls `condition.Tick()` for each.
+- **`Condition.Tick()`** - Default implementation calls `Mod(-1)` to decrease `value` by 1 each turn. When `value <= 0`, `OnValueChanged()` calls `Kill()` to remove condition.
+- **Condition element contributions**: Conditions work similarly to equipment - when added with `UseElements = true`, they create `ElementContainerCondition`, set elements via `SetBase()`, and link to character's `vLink` via `SetParent(owner)`. When removed, they unlink via `SetParent()` (no parent). Their contributions are separate from `tempElements` - conditions have their own container system.
+
+### Curing / Healing
+
+- **`Chara.Cure(CureType type, int p = 100, BlessedState state = BlessedState.Normal)`** - Cures conditions based on type:
+  - **`CureType.Heal` / `CureType.Prayer`**: Calls `CureCondition<T>(threshold)` for Fear, Blind, Poison, Confuse, Dim, Bleed with power-scaled thresholds. If blessed, reduces SAN by 15. Does NOT call `CureTempElements`.
+  - **`CureType.CureBody`**: Cures Blind, Poison, Bleed with higher thresholds. Calls `CureTempElements(p, body: true, mind: false)`.
+  - **`CureType.CureMind`**: Cures Fear, Dim. Calls `CureTempElements(p, body: false, mind: true)`.
+  - **`CureType.HealComplete` / `Death` / `Jure` / `Boss` / `Unicorn`**: Calls `CureTempElements(p * 100, body: true, mind: true)`. Iterates all conditions, `Kill()`s Bad/Debuff/Disease types. Skips Anorexia unless Death/Unicorn/Jure.
+- **`Chara.CureCondition<T>(int v = 99999)`** - Subtracts `v` from `condition.value`; calls `Kill()` only if value drops to 0 or below.
+- **`Chara.CureTempElements(int p, bool body, bool mind)`** - Reduces negative temp elements only:
+  - `Element.List_Body = { 70 (STR), 72 (DEX), 71 (END), 77 (CHA) }`
+  - `Element.List_Mind = { 74 (LER), 75 (WIL), 76 (MAG), 73 (PER) }`
+  - For each element in the selected lists: if `tempElements` has it and `vBase < 0`, calls `ModTempElement(ele, Clamp(p/20 + rnd(p/20), 1, -vBase))` — adds a positive amount, never overshooting past 0
+
+## UI & Reactive System
+
+### UI Display
+
+- **`Element._WriteNote(UINote n, ElementContainer owner, Action<UINote> onWriteNote, bool isRef, bool addHeader = true)`** - Renders the main stat panel:
+  - **Header**: Adds header with element name (or ability header for `Act` elements)
+  - **Detail text**: Adds element detail/flavor text if available
+  - **Value display**: Calculates `num = vLink + (IsPCFaction ? faction.charaElements.Value(id) : 0)` for display
+  - **For `Act` elements**: Displays "vValue" with `DisplayValue` and `ValueWithoutLink + num` (shows as "X (Base Y + Z)")
+  - **For regular elements**: If `ShowValue` is true, displays "vCurrent" with `DisplayValue` and `ValueWithoutLink + num`
+  - **Potential display**: If `ShowPotential` is true, displays potential breakdown with `vPotential + vSourcePotential + MinPotential + vTempPotential`
+  - **Relative attribute**: If `ShowRelativeAttribute` is true and element has `aliasParent`, shows parent element info
+  - **Debug info**: If `EClass.debug.showExtra` is true, shows class name, vExp, vSource, vSourcePotential, vPotential, Potential
+  - **Level bonuses**: Calls `CheckLevelBonus(owner, n)` to show level-based unlocks
+  - **Bonus breakdown**: If `ShowBonuses` is true and `owner.Chara != null`, creates `BonusInfo` and calls `WriteNote()` to show detailed breakdown
+- **`Element.BonusInfo.WriteNote()`** - Adds detailed breakdown lines to UI (called from `_WriteNote`):
+  - **Equipment bonuses**: Iterates `body.slots`, sums `thing.elements.GetOrCreateElement(id).Value` for each slot
+    - Excludes `slot.elementId == 44` (special slot)
+    - Excludes global elements (`!orCreateElement.IsGlobalElement`)
+    - Special handling: If `id == 67 || id == 66`, excludes `slot.elementId == 35`
+    - Displays as "equipment: +X" or "equipment: -X"
+  - **Faction bonuses**: If `IsPCFaction`, gets `faction.charaElements.GetElement(id)` and displays `element.Value` as "sub_faction: +X"
+  - **Conditions**: Iterates `conditions` list, for each condition:
+    - Gets `condition.GetElementContainer()` (returns `ElementContainerCondition`)
+    - Calls `elemContainer.Value(id)` and displays as condition name (e.g., "Poison: -5")
+  - **Temporary modifiers**: If `tempElements != null`, calls `tempElements.Value(id)` and displays as "tempStrengthen" or "tempWeaken" based on sign
+  - **Faith bonuses**: If `faithElements != null`, calls `faithElements.Value(id)` and displays using faith feat name or default name
+  - **Multiplier bonuses**: Iterates `elements.dict.Values`, finds elements with `HasTag("multiplier")` and `aliasRef == ele.source.alias`, displays as percentage fix (e.g., "+X%")
+  - **SPD side-effect**: If `id == 79`, calls `c.RefreshSpeed(this)` to recalculate speed info as part of the display
+  - **Special cases**: Handles lucky coin (for LUK), machine bonuses (for DV/PV/SPD), etc.
+- **UI Display (Equipment)**: Reads directly from `body.slots`:
+  - Iterates `c.body.slots`, for each slot with `thing != null` and `slot.elementId != 44` (not backpack):
+    - Gets `slot.thing.elements.GetOrCreateElement(id)` and sums `orCreateElement.Value`
+    - Excludes global elements (`!orCreateElement.IsGlobalElement`)
+  - Displays sum as "Equipment +X" line
+  - **The UI does NOT read from `vLink` for equipment display** - it calculates directly from `body.slots`
+
+### Core Refresh Functions
 
 - **`Element.Value`** (int property) - **On-demand calculation**: Returns `ValueWithoutLink + vLink + ((owner != null) ? owner.ValueBonus(this) : 0)`. Calculated every time it's accessed, not cached. This means stats are always up-to-date without explicit recalculation.
 - **`Element.ValueWithoutLink`** (int property) - **On-demand calculation**: Returns `vBase + vSource`. Also calculated on-demand.
@@ -465,3 +568,11 @@
   - **Derived state**: Updated via `Refresh()` when needed (visibility, conditions, etc.)
 - **Propagation**: Changes propagate through parent-child relationships via `ModLink()`, ensuring linked containers (equipment, conditions) stay in sync
 - **Efficiency**: On-demand calculation means stats are only computed when needed, and UI updates are targeted to specific elements that changed
+
+## Element ID Quick Reference
+
+Main attributes (from SKILL.cs constants):
+- **60** = life, **61** = mana, **62** = vigor (stamina multiplier elements)
+- **64** = DV, **65** = PV, **66** = HIT
+- **70** = STR, **71** = END, **72** = DEX, **73** = PER, **74** = LER, **75** = WIL, **76** = MAG, **77** = CHA, **78** = LUC, **79** = SPD, **80** = INT (rarely used)
+- **93** = antiMagic, **207** = weightlifting, **303** = manaCapacity, **306** = faith
