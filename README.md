@@ -40,7 +40,6 @@ Credits again to the original author for creating the original mod. This mod has
 - Counters for little dead and saved
 - Deepest (deepest floor reached)
 - Kumi (Secret Experience of Kumiromi books the character has used)
-- Work/hobby bonuses from your faction branch (work elements)
 - Known BGMs (Tapes)
 - Sketches (Drawings)
 - Key Items: Fragrance of Goddess, Black Cat's Saliva, Feather Shard of Goddess, and Lucky Coin (you will need to go buy the license again)

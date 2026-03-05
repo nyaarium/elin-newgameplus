@@ -221,29 +221,6 @@ public static class CharacterExporter
 		return elements;
 	}
 
-	public static List<ElementData> ExportWorkElements(Chara c)
-	{
-		List<ElementData> elements = new List<ElementData>();
-		if (c.workElements != null && c.workElements.dict.Count > 0)
-		{
-			foreach (Element element in c.workElements.dict.Values)
-			{
-				if (element.vBase != 0)
-				{
-					elements.Add(new ElementData
-					{
-						id = element.id,
-						vBase = element.vBase,
-						vExp = 0,
-						vPotential = 0,
-						vTempPotential = 0
-					});
-				}
-			}
-		}
-		return elements;
-	}
-
 	public static List<ConditionData> ExportConditions(Chara c)
 	{
 		List<ConditionData> conditions = new List<ConditionData>();

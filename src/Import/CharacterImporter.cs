@@ -93,22 +93,6 @@ public static class CharacterImporter
 			EClass.player.sketches = dumpData.playerSketches.ToHashSet();
 		}
 
-		// Import workElements (work/hobby bonuses from faction branch)
-		// Note: This may not fully restore if character's home branch changed, but preserves the bonuses
-		if (dumpData.workElements != null && dumpData.workElements.Count > 0)
-		{
-			if (c.workElements == null)
-			{
-				c.workElements = new ElementContainer();
-				// workElements parent is set by RefreshWorkElements() based on branch, but we'll link to character for now
-				c.workElements.SetParent(c);
-			}
-			foreach (ElementData elementData in dumpData.workElements)
-			{
-				c.workElements.SetBase(elementData.id, elementData.vBase, 0);
-			}
-		}
-
 		if (ModConfig.GetOption("includeSkills")?.Value == true && dumpData.playerKnownCraft != null && dumpData.playerKnownCraft.Count > 0)
 		{
 			EClass.player.knownCraft = dumpData.playerKnownCraft.ToHashSet();

@@ -126,7 +126,6 @@ public class CharacterDumpData
 	[DataMember] public List<int> c_corruptionHistory { get; set; }
 	[DataMember] public List<ElementData> tempElements { get; set; }
 	[DataMember] public List<ElementData> faithElements { get; set; }
-	[DataMember] public List<ElementData> workElements { get; set; }
 	[DataMember] public List<ConditionData> conditions { get; set; }
 	[DataMember] public List<MutationData> mutations { get; set; }
 

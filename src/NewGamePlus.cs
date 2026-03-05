@@ -71,7 +71,6 @@ public class NewGamePlus : BaseUnityPlugin
 			c_corruptionHistory = c.c_corruptionHistory != null ? c.c_corruptionHistory.ToList() : new List<int>(),
 			tempElements = CharacterExporter.ExportTempElements(c),
 			faithElements = CharacterExporter.ExportFaithElements(c),
-			workElements = CharacterExporter.ExportWorkElements(c),
 			conditions = CharacterExporter.ExportConditions(c),
 			mutations = CharacterExporter.ExportMutations(c),
 
