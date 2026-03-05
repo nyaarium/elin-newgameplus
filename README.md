@@ -52,12 +52,13 @@ Credits again to the original author for creating the original mod. This mod has
 - Include Bank
 - Include Player Level
 - Include Acquired Feats (unchecking will refund the points)
+- Include Body Parts (for races/feats that gives body parts)
 - Include Abilities (Spells)
 - Include Attributes (STR, END, DEX, etc.)
 - Include Skills
 - Include Faith
 - Include Karma
-- Include Fame (tax is based on fame. importing fame will start you with high taxes)
+- Include Fame (Warning: your tax will start high)
 - Include Influence
 - Include Craft Recipes
 - Include Codex
@@ -73,3 +74,4 @@ Credits again to the original author for creating the original mod. This mod has
 - Buildings
 - Guild experience
 - Paid debt
+- Marriage/fiancé state (attuned rings, fiancé list, marriage history)

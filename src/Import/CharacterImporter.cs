@@ -278,9 +278,9 @@ public static class CharacterImporter
 			}
 		}
 
-		// Import extra body parts (from Chaos Shape feat, etc.) if Include Acquired Feats is enabled
+		// Import extra body parts (Slimes, Chaos Shape) if Include Body Parts is enabled
 		// This must be done after feats are imported because Chaos Shape adds body parts
-		if (includeFeats && dumpData.charaBodyParts != null && dumpData.charaBodyParts.Count > 0)
+		if (ModConfig.GetOption("includeBodyParts")?.Value == true && dumpData.charaBodyParts != null && dumpData.charaBodyParts.Count > 0)
 		{
 			ImportBodyParts(c, dumpData.charaBodyParts);
 		}
@@ -767,13 +767,20 @@ public static class CharacterImporter
 						}
 					}
 				}
-				catch (System.Exception ex)
+				catch (System.Exception)
 				{
-					Msg.SayRaw($"NG+: Failed to equip item '{thingData?.id ?? "unknown"}' to slot {thingData?.slotElementId}: {ex.Message}");
+					Msg.SayRaw($"NG+: Failed to equip '{thingData?.id ?? "unknown"}' to slot {thingData?.slotElementId}, placing in inventory.");
 					if (spawnedCard != null)
-						DropAtFeet(c, spawnedCard);
+					{
+						spawnedCard.c_equippedSlot = 0;
+						c.AddThing(spawnedCard.Thing, tryStack: false);
+						if (((Card)spawnedCard.Thing).parent != c)
+							DropAtFeet(c, spawnedCard);
+					}
 					else
+					{
 						DropAtFeet(c, thingData);
+					}
 				}
 			}
 		}

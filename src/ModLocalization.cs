@@ -465,7 +465,29 @@ public static class ModLocalization
 				{ "JP", "エーテル以外の原因による変異を治療します。" },
 				{ "CN", "治愈非以太引起的突变。" }
 			}
-		}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeBodyParts",
+			ConfigSection = "import",
+			DefaultValue = false,
+			Description = "Include extra body parts onto races with less body parts (slimes, chaos shapes).",
+			ToggleId = "importIncludeBodyPartsToggle",
+			LabelKey = "ImportIncludeBodyParts",
+			TooltipKey = "ImportIncludeBodyPartsTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Body Parts" },
+				{ "JP", "身体部位を含める" },
+				{ "CN", "包含身体部位" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include extra body parts onto races with less body parts (slimes, chaos shapes)." },
+				{ "JP", "部位が少ない種族（スライム、カオスシェイプなど）に追加の身体部位を引き継ぎます。" },
+				{ "CN", "将额外身体部位引入身体部位较少的种族（史莱姆、混沌形态等）。" }
+			}
+		},
 	};
 
 	public static readonly List<LocalizedString> GeneralStrings = new()

@@ -8,7 +8,7 @@ using HarmonyLib;
 namespace NewGamePlus;
 
 [BepInDependency("evilmask.elinplugins.modoptions", BepInEx.BepInDependency.DependencyFlags.SoftDependency)]
-[BepInPlugin("nyaarium.newgameplusplus", "New Game++", "1.2.2")]
+[BepInPlugin("nyaarium.newgameplusplus", "New Game++", "1.3.0")]
 public class NewGamePlus : BaseUnityPlugin
 {
 	private static NewGamePlus instance;

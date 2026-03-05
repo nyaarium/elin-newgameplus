@@ -66,6 +66,9 @@
                     <contentId>ImportIncludeCodex</contentId>
                     <tooltip>ImportIncludeCodexTooltip</tooltip>
                 </toggle>
+            </vlayout>
+            <vlayout id="vlayoutSpecial" border="true">
+                <title>SpecialImportSettingsTitle</title>
                 <toggle id="importCureDiseasesToggle">
                     <contentId>ImportCureDiseases</contentId>
                     <tooltip>ImportCureDiseasesTooltip</tooltip>
@@ -74,9 +77,10 @@
                     <contentId>ImportCureMutations</contentId>
                     <tooltip>ImportCureMutationsTooltip</tooltip>
                 </toggle>
-            </vlayout>
-            <vlayout id="vlayoutSpecial" border="true">
-                <title>SpecialImportSettingsTitle</title>
+                <toggle id="importIncludeBodyPartsToggle">
+                    <contentId>ImportIncludeBodyParts</contentId>
+                    <tooltip>ImportIncludeBodyPartsTooltip</tooltip>
+                </toggle>
             </vlayout>
         </hlayout>
 
