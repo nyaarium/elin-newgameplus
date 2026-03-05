@@ -104,14 +104,14 @@ public static class ModLocalization
 			LabelTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Include Toolbar" },
-				{ "JP", "ツールバーを含める" },
-				{ "CN", "包含工具栏" }
+				{ "JP", "ホットバーを含める" },
+				{ "CN", "包含快捷栏" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Include toolbar items." },
-				{ "JP", "ツールバーのアイテムを含めます。" },
-				{ "CN", "包含工具栏物品。" }
+				{ "JP", "ホットバーのアイテムを含めます。" },
+				{ "CN", "包含快捷栏物品。" }
 			}
 		},
 		new UIOption
@@ -149,13 +149,13 @@ public static class ModLocalization
 			{
 				{ "EN", "Include Inventory and Container Contents" },
 				{ "JP", "インベントリとコンテナの内容を含める" },
-				{ "CN", "包含库存和容器内容" }
+				{ "CN", "包含背包和容器内容" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Include contents of inventory and containers." },
 				{ "JP", "インベントリとコンテナの内容を含めます。" },
-				{ "CN", "包含库存和容器的内容。" }
+				{ "CN", "包含背包和容器的内容。" }
 			}
 		},
 		new UIOption
@@ -237,13 +237,13 @@ public static class ModLocalization
 			{
 				{ "EN", "Include Faith" },
 				{ "JP", "信仰を含める" },
-				{ "CN", "包含虔诚" }
+				{ "CN", "包含信仰" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Includes your faith and number of days with the current deity" },
 				{ "JP", "あなたの信仰と現在の神との日数を含めます" },
-				{ "CN", "包含您的信仰和与当前神的天数" }
+				{ "CN", "包含您的信仰和与当前神明的天数" }
 			}
 		},
 		new UIOption
@@ -391,13 +391,13 @@ public static class ModLocalization
 			{
 				{ "EN", "Include fame (Warning: your tax will start high)" },
 				{ "JP", "名声を含める（注意：税が高く始まります）" },
-				{ "CN", "包含声望（注意：税款会从较高开始）" }
+				{ "CN", "包含名声（注意：税款会从较高开始）" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Includes your fame. Tax is based on fame. Importing fame will start you with high taxes." },
 				{ "JP", "あなたの名声を含めます。税は名声に基づくため、名声をインポートするとはじめから高い税額になります。" },
-				{ "CN", "包含您的声望。税基于声望。导入声望会使您一开始就面临高额税款。" }
+				{ "CN", "包含您的名声。税款基于名声。导入名声会使您一开始就面临高额税款。" }
 			}
 		},
 		new UIOption
