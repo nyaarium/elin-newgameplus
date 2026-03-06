@@ -19,7 +19,9 @@ Local disassembly repo: `./disassembly/Elin-Decompiled-main/`
 
 Begin all searches in: `disassembly/Elin-Decompiled-main/Elin/`
 
-If it is missing, download as a ZIP `https://github.com/Elin-Modding-Resources/Elin-Decompiled/archive/refs/heads/main.zip` and extract to put the repo in: `./disassembly/Elin-Decompiled-main/`.
+Repo: `git@github.com:Elin-Modding-Resources/Elin-Decompiled.git`
+
+If it is missing, clone (depth 1) into `./disassembly/`
 
 ## File layout
 
