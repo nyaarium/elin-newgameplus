@@ -11,6 +11,7 @@ services:
     volumes:
       # Workspace
       - ..:/workspace/elin-newgameplus:cached
+      - /mnt/s/Steam/steamapps/workshop/content/2135150:/mnt/workshop:ro
       - /mnt/s/Steam/steamapps/common/Elin:/mnt/elin:cached
       # Home
       - ../volumes/home:/home/vscode:cached

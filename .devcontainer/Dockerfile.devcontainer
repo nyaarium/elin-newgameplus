@@ -17,6 +17,10 @@ RUN apt update && apt install -y libicu-dev \
 	&& rm /tmp/dotnet-install.sh \
 	&& apt clean && rm -rf /var/lib/apt/lists/*
 
+USER vscode
+RUN dotnet tool install ilspycmd -g
+USER root
+	
 COPY .devcontainer/post-*.sh /var/
 ENV DEBIAN_FRONTEND=dialog
 RUN /finalize
