@@ -9,8 +9,9 @@ This project is the New Game++ mod for the game called Elin. The game and mod ar
   - {other disassemblies} - You may disassemble other mods here to understand how to code against them. Just clean up after yourself.
 - `docs/` - Temporary docs we are corrently working with. Typically the current issue.
   - `src/` - Source code for this mod.
+    - `Utils/DebugLogger.cs` - Debugging class. Use this to instrument suspect code and form a hypothesis.
     - `ModLocalization.cs` - Mod localization strings.
-- `build.bat` - Always build the project after edits.
+- `build.sh` - Always build the project after edits.
 - `package.xml` - Mod package metadata.
 - `NewGamePlus.csproj` - Config file.
 - `NewGamePlusConfig.xml` - ModConfig XML file.
