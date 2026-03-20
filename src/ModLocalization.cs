@@ -204,28 +204,6 @@ public static class ModLocalization
 		},
 		new UIOption
 		{
-			ConfigKey = "includeSkills",
-			ConfigSection = "import",
-			DefaultValue = true,
-			Description = "Include your skill levels (general skills, craft skills, etc.) when importing",
-			ToggleId = "importIncludeSkillsToggle",
-			LabelKey = "ImportIncludeSkills",
-			TooltipKey = "ImportIncludeSkillsTooltip",
-			LabelTranslations = new Dictionary<string, string>
-			{
-				{ "EN", "Include Skills" },
-				{ "JP", "スキルを含める" },
-				{ "CN", "包含技能" }
-			},
-			TooltipTranslations = new Dictionary<string, string>
-			{
-				{ "EN", "Includes your skill levels (general skills, craft skills, etc.)." },
-				{ "JP", "あなたのスキルレベル（一般スキル、クラフトスキルなど）を含めます。" },
-				{ "CN", "包含您的技能等级（通用技能、制作技能等）。" }
-			}
-		},
-		new UIOption
-		{
 			ConfigKey = "includePiety",
 			ConfigSection = "import",
 			DefaultValue = true,
@@ -329,9 +307,9 @@ public static class ModLocalization
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
-				{ "EN", "Includes character levels and experience you've gained." },
-				{ "JP", "獲得したキャラクターレベルと経験値を含めます。" },
-				{ "CN", "包含您获得的角色等级和经验值。" }
+				{ "EN", "Includes character level and experience. Level-ups depend on training low-level skills. If you import high skills, consider including this too." },
+				{ "JP", "キャラクターのレベルと経験値を含めます。レベルアップは低レベルスキルの訓練に依存します。高レベルスキルをインポートする場合はこれも含めることを検討してください。" },
+				{ "CN", "包含角色等级和经验值。升级依赖于训练低等级技能。如果导入高等级技能，建议同时包含此项。" }
 			}
 		},
 		new UIOption
@@ -354,6 +332,28 @@ public static class ModLocalization
 				{ "EN", "Includes feats you've purchased. Unchecking this will refund all points." },
 				{ "JP", "購入した特技を含めます。これをオフにすると、すべてのポイントが返金されます。" },
 				{ "CN", "包含您购买的特技。取消选中此选项将退还所有点数。" }
+			}
+		},
+		new UIOption
+		{
+			ConfigKey = "includeSkills",
+			ConfigSection = "import",
+			DefaultValue = true,
+			Description = "Include your skill levels (general skills, craft skills, etc.) when importing",
+			ToggleId = "importIncludeSkillsToggle",
+			LabelKey = "ImportIncludeSkills",
+			TooltipKey = "ImportIncludeSkillsTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Skill Levels (Warning: you will level up slower)" },
+				{ "JP", "スキルレベルを含める（警告：レベルアップが遅くなります）" },
+				{ "CN", "包含技能等级（警告：升级速度会变慢）" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Includes your skill levels. High skills gain exp slower, which slows player level-ups. Consider including Player Level if you include this." },
+				{ "JP", "スキルレベルを含めます。高レベルのスキルは経験値の獲得が遅くなり、プレイヤーのレベルアップも遅くなります。これを含める場合はプレイヤーレベルも含めることを検討してください。" },
+				{ "CN", "包含您的技能等级。高等级技能获取经验更慢，会减缓玩家升级速度。如果包含此项，建议同时包含玩家等级。" }
 			}
 		},
 		new UIOption
