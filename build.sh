@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-
 set -e
 
-echo Building...
+MODE="${1:-release}"
 
-dotnet build -c Release 2>&1
+if [ "$MODE" = "debug" ]; then
+    echo "Building DEBUG (dev mode)..."
+    dotnet build -c Debug 2>&1
+else
+    echo "Building RELEASE..."
+    dotnet build -c Release 2>&1
+fi
 
 echo
-echo Build successful!
+echo "Build successful! ($MODE)"

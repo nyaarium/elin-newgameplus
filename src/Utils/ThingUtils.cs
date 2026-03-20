@@ -97,7 +97,7 @@ public static class ThingUtils
 		// Guard: if this card is somehow a Chara, warn and preserve UID to avoid cardMap corruption
 		if (card.isChara)
 		{
-			Msg.SayRaw($"NG+: Warning — attempted to restore a Chara '{thingData.id}' via RestoreThingFromData. UID preserved.");
+			Msg.SayRaw($"NG+: Warning, attempted to restore a Chara '{thingData.id}' via RestoreThingFromData. UID preserved.");
 		}
 
 		if (card.IsContainer)

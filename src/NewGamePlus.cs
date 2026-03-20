@@ -20,6 +20,16 @@ public class NewGamePlus : BaseUnityPlugin
 		ModLocalization.RegisterAll(this);
 		ModLocalization.PopulateLocalizedStrings();
 		new Harmony("nyaarium.newgameplusplus").PatchAll();
+#if DEVMODE
+		ConnectorClient.Start();
+#endif
+	}
+
+	private void OnDestroy()
+	{
+#if DEVMODE
+		ConnectorClient.Stop();
+#endif
 	}
 
 	private void Start()
