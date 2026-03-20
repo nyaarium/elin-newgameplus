@@ -370,6 +370,9 @@ public static class CharacterImporter
 			c.c_genes = genes;
 		}
 
+		// Strip race-specific feats and genes that don't belong to the new race
+		StripRaceSpecificTraits(c, dumpData);
+
 		c.CalculateMaxStamina();
 		// Always set HP to max to account for level ups
 		c.hp = c.MaxHP;
@@ -1073,6 +1076,106 @@ public static class CharacterImporter
 		EClass._zone.AddCard(card, c.pos);
 		if (card.IsContainer)
 			card.Install();
+	}
+
+	/// <summary>
+	/// Strips race-specific feats and genes that belong to the exported race but not the current
+	/// race. Called after gene restore so that genes are present in c.c_genes when we iterate them.
+	///
+	/// Algorithm:
+	///   1. Build oldRaceOnlyFeats: feat IDs in the exported race's elementMap that are NOT in
+	///      the current race's elementMap.
+	///   2. Remove any installed genes that carry those feats (reverse their effects, refund cost).
+	///   3. Strip any remaining oldRaceOnlyFeats that are still set on the character.
+	///   4. Clean up ActSlime (6608) which is auto-learned when feat 1274 exists.
+	/// </summary>
+	private static void StripRaceSpecificTraits(Chara c, CharacterDumpData dumpData)
+	{
+		string currentRaceId = ((Card)c).c_idRace;
+		string exportedRaceId = (dumpData.cardIdRace != null && dumpData.cardIdRace.Count > 0) ? dumpData.cardIdRace[0] : null;
+
+		// No race change, nothing to strip
+		if (string.IsNullOrEmpty(exportedRaceId) || exportedRaceId == currentRaceId)
+			return;
+
+		// Both races must be in the source tables
+		if (!EClass.sources.races.map.TryGetValue(exportedRaceId, out SourceRace.Row exportedRaceRow))
+			return;
+		if (!EClass.sources.races.map.TryGetValue(currentRaceId, out SourceRace.Row currentRaceRow))
+			return;
+
+		Dictionary<int, int> exportedRaceMap = exportedRaceRow.elementMap;
+		Dictionary<int, int> currentRaceMap = currentRaceRow.elementMap;
+
+		// Build set of feat IDs that exist in the exported race but NOT in the current race
+		HashSet<int> oldRaceOnlyFeats = new HashSet<int>();
+		if (exportedRaceMap != null)
+		{
+			foreach (int elemId in exportedRaceMap.Keys)
+			{
+				if (!EClass.sources.elements.map.TryGetValue(elemId, out SourceElement.Row sourceRow))
+					continue;
+				if (sourceRow.category != "feat")
+					continue;
+				if (currentRaceMap == null || !currentRaceMap.ContainsKey(elemId))
+					oldRaceOnlyFeats.Add(elemId);
+			}
+		}
+
+		if (oldRaceOnlyFeats.Count == 0)
+			return;
+
+		// Step 8: Remove genes that carry any of the old-race-only feats.
+		// Do NOT use CharaGenes.Remove() because it calls Msg.Say() during import. Replicate its logic:
+		//   remove from list, refund feat points, Apply(reverse: true).
+		// Iterate in reverse so RemoveAt(i) doesn't skip elements.
+		if (c.c_genes != null && c.c_genes.items != null)
+		{
+			for (int i = c.c_genes.items.Count - 1; i >= 0; i--)
+			{
+				DNA dna = c.c_genes.items[i];
+				if (dna.vals == null) continue;
+
+				// Gene vals are stride-2: even indices are element IDs
+				bool hasOldRaceFeat = false;
+				int matchedFeatId = 0;
+				for (int v = 0; v < dna.vals.Count; v += 2)
+				{
+					if (oldRaceOnlyFeats.Contains(dna.vals[v]))
+					{
+						hasOldRaceFeat = true;
+						matchedFeatId = dna.vals[v];
+						break;
+					}
+				}
+
+				if (!hasOldRaceFeat) continue;
+
+				c.c_genes.items.RemoveAt(i);
+				((Card)c).feat += dna.cost * c.GeneCostMTP / 100;
+				dna.Apply(c, reverse: true);
+			}
+		}
+
+		// Step 9: Strip any remaining old-race feats still set on the character
+		foreach (int featId in oldRaceOnlyFeats)
+		{
+			Element el = c.elements.GetElement(featId);
+			if (el == null || el.vBase <= 0) continue;
+
+			c.SetFeat(featId, 0);
+		}
+
+		// Step 10: Clean up ActSlime (6608), auto-learned by CheckSkillActions when feat 1274 exists.
+		// If we stripped feat 1274 (featSlimeEvolution) and the character no longer has it, remove the action.
+		if (oldRaceOnlyFeats.Contains(1274) && !c.HasElement(1274))
+		{
+			Element actSlime = c.elements.GetElement(6608);
+			if (actSlime != null && actSlime.vBase > 0)
+			{
+				c.elements.SetBase(6608, 0);
+			}
+		}
 	}
 
 	/// <summary>
