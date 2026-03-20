@@ -569,6 +569,139 @@
 - **Propagation**: Changes propagate through parent-child relationships via `ModLink()`, ensuring linked containers (equipment, conditions) stay in sync
 - **Efficiency**: On-demand calculation means stats are only computed when needed, and UI updates are targeted to specific elements that changed
 
+## Feat Categorization
+
+### Tag-Based Classification
+
+Feats are categorized via **tags** on their `SourceElement.Row` data (spreadsheet-driven, not code constants). The game uses these tags:
+
+- **`"innate"`** - Race/class-specific feats. Cannot be purchased. Shown in a separate "Innate" section in character windows (`WindowChara.cs:633`, `WindowCharaMini.cs:150`). Excluded from `ListAvailabeFeats()` (`Chara.cs:10059`).
+- **`"class"`** - Class/job-specific feats. Excluded from `ListAvailabeFeats()`.
+- **`"hidden"`** - Hidden feats. Excluded from `ListAvailabeFeats()`. Only shown in UI when `EClass.debug.showExtra` is true.
+- **`"noPet"`** - Feats that cannot be granted to pets. Excluded from `ListAvailabeFeats(pet: true)`.
+
+### Purchasable Feat Criteria
+
+A feat is purchasable (appears in the feat purchase UI) when ALL of these are true (`Chara.ListAvailabeFeats()` at `Chara.cs:10052-10064`):
+1. `source.group == "FEAT"`
+2. `source.cost[0] != -1` (has a purchasable cost)
+3. `!source.categorySub.IsEmpty()` (has a subcategory)
+4. NOT tagged `"class"`, `"hidden"`, or `"innate"`
+5. Current tier < `source.max`
+6. `IsPurchaseFeatReqMet(elements)` returns true (prerequisite elements met)
+
+### Character Window Display
+
+- **Innate feats section**: `elements.ListElements(a => a.source.category == "feat" && a.HasTag("innate") && a.Value != 0)` (`WindowChara.cs:633`)
+- **Non-innate feats section**: `elements.ListElements(a => a.source.category == "feat" && !a.HasTag("innate") && a.Value != 0)` (`WindowChara.cs:655`)
+- **Character maker**: Shows all feats except feat 1220 (featFate), with `addRaceFeat: true` flag which adds element 29 as a display-only entry (`UICharaMaker.cs:175`)
+
+## Gene System
+
+### Overview
+
+Genes (`DNA` objects) are installable modifications that grant stat boosts, feats, abilities, and body parts to characters. They are stored in `Chara.c_genes` (`CharaGenes` class, `CharaGenes.cs`).
+
+### DNA Data Structure
+
+Each `DNA` object (`DNA.cs`) contains:
+- **`id`** (string) - Source character ID the gene was generated from
+- **`vals`** (`List<int>`) - Flat list of alternating `(elementId, value)` pairs. Each pair represents one gene effect.
+- **`type`** (`DNA.Type` enum) - `Inferior` (0), `Default` (3), `Superior` (5), `Brain` (8)
+- **`cost`** (int) - Feat point cost to install
+- **`slot`** (int) - Gene slot size requirement (how many slots this gene occupies)
+- **`isManiGene`** (bool) - Whether this is a manifestation gene
+- **`seed`** (int) - Random seed used during generation
+- **`lv`** (int) - Level of the source character
+
+### Gene Val Categories
+
+Gene vals can contain any element type. Categories determine how they're applied (`DNA.Apply()` at `DNA.cs:195-249`):
+- **`"feat"`** - Applied via `c.SetFeat(num, ValueWithoutLink + 1)` (forward) or `SetFeat(num, ValueWithoutLink - 1)` (reverse). Modifies the feat's vBase (and triggers `Feat.Apply` side effects on other elements).
+- **`"ability"`** - Added to `c.ability` list (forward) or removed (reverse). Not stored in elements vBase.
+- **`"slot"`** - Body parts. Added via `c.body.AddBodyPart()` (forward) or `RemoveBodyPart()` (reverse).
+- **Default** (skills, attributes, etc.) - Applied via `c.elements.ModBase(num, value)` (forward) or `ModBase(num, -value)` (reverse). Directly modifies vBase.
+
+### Gene Installation Methods
+
+1. **Gene Machine (surgery)** - For non-PC party members only (`TraitGeneMachine.cs:86` filters `!member.IsPC`). Player places ally in stasis chamber, inserts gene via `LayerDragGrid`, waits for duration (`DNA.GetDurationHour()` based on cost), then extracts. At completion: `condition.gene.c_DNA.Apply(target)` (`TraitGeneMachine.cs:127`).
+
+2. **Eating genes (Slime PC only)** - Requires `HasElement(1274)` (Predatory Evolution). PC can eat gene items on the ground via `TraitGene.TrySetHeldAct()` (`TraitGene.cs:41-83`) which triggers `AI_Eat`. Gene is applied at `FoodEffect.cs:469`: `c_DNA.Apply(c2)`. If gene slots are exceeded, oldest genes are auto-removed.
+
+### Gene Installation Flow (`DNA.Apply(Chara c)` at `DNA.cs:178-193`)
+
+1. Creates `c.c_genes = new CharaGenes()` if null
+2. If `Type.Inferior`: increments `c.c_genes.inferior` (grants gene removal credit) and returns
+3. Deducts feat points: `c.feat -= cost * c.GeneCostMTP / 100`
+4. Calls `Apply(c, reverse: false)` to apply all vals
+5. Adds DNA to `c_genes.items` list
+
+### Gene Removal (`CharaGenes.Remove()` at `CharaGenes.cs:12-22`)
+
+```
+CharaGenes.Remove(Chara c, DNA item):
+  c.c_genes.items.Remove(item)           // Remove from list
+  c.feat += item.cost * c.GeneCostMTP/100 // Refund feat points
+  item.Apply(c, reverse: true)            // Reverse all effects
+  c.Refresh()                             // Refresh derived state
+  c.RemoveAllStances()                    // Clear stances
+```
+
+Removal requires `genes.inferior > 0` (each inferior gene grants one removal credit, checked in `WindowCharaMini.cs:244`). Some genes cannot be removed: `DNA.CanRemove()` (`DNA.cs:251-270`) returns false for feats 1237 (featRoran), 1415 (featFoxMaid), and conditionally for 1228 (featDemigod), 1414 (featWhiteVixen) if character is PC.
+
+### Gene Cost
+
+- **PC**: `GeneCostMTP = 5` (`Chara.cs:1092`) - PCs pay only 5% of nominal cost
+- **Non-PC**: `GeneCostMTP = 100` (`Chara.cs:1090`) - NPCs pay full cost
+- Gene slots limited by: `MaxGeneSlot = race.geneCap - (HasElement(1237) ? 2 : 0) + Evalue(1242) + Evalue(1273) + ((IsPC && HasElement(1274)) ? (Evalue(1274) - 7) : 0)` (`Chara.cs:1082`)
+
+### Gene Generation (`DNA.Generate()` at `DNA.cs:279-455`)
+
+Gene contents are determined from a model character:
+1. `ListGeneFeats()` (`ElementContainer.cs:636-638`) returns feats where `ValueWithoutLink > 0 && category == "feat" && cost[0] > 0 && geneSlot >= 0`
+2. If no gene feats found, falls back to `ListAvailabeFeats(pet: true)`
+3. Randomly adds attributes, skills, feats, abilities, and body parts based on gene type
+4. **No race filtering**: Any feat the model character has (including race-granted feats) can appear in the gene
+
+### Important Notes
+
+- **Clearing `c_genes = null` is unsafe**: Gene effects (stat boosts, feats, body parts, abilities) already applied to elements would NOT be reversed. Must call `DNA.Apply(c, reverse: true)` for each gene before removing.
+- **Gene effects on race change**: `ChangeRace()` does not touch `c_genes`. Genes that granted race-specific feats (e.g., 1274 via a slime gene) persist on the character even after changing to a non-slime race.
+
+## Predatory Evolution (featSlimeEvolution)
+
+### Identity
+
+- **Feat ID**: 1274 (`FEAT.featSlimeEvolution` at `FEAT.cs:172`)
+- **Category**: `"feat"` (a Feat element, not an ability)
+- **Source**: Granted by Slime race via `race.elementMap` (applied to `vSource` via `ApplyElementMap`)
+
+### What It Grants
+
+1. **Extra gene slots**: `MaxGeneSlot` includes `((IsPC && HasElement(1274)) ? (Evalue(1274) - 7) : 0)` (`Chara.cs:1082`). At tier 8 (max), grants 1 extra slot.
+2. **Ability to eat genes**: `TraitGene.TrySetHeldAct()` (`TraitGene.cs:43`) and `AI_Eat` (`AI_Eat.cs:32`) check `HasElement(1274)`. Without it, PCs cannot eat gene items.
+3. **ActSlime ability (6608)**: `ElementContainerCard.CheckSkillActions()` (`ElementContainerCard.cs:44`) calls `TryLearn(6608, 1274, 0)` -- if character has feat 1274 at any value, they learn ActSlime.
+4. **Gene cost display**: `TraitGene.WriteNote()` (`TraitGene.cs:24`) shows adjusted gene cost for slime PCs.
+5. **Spell stock behavior**: `Chara.cs:6051` -- if PC has 1274 and a spell has negative `vPotential`, blocks casting with "noSpellStock" message (slimes use spell stocks differently).
+
+### Auto-Levelup
+
+On each `Card.LevelUp()` (`Card.cs:3078-3080`):
+```
+if (IsPC && HasElement(1274) && Evalue(1274) < 8 && LV >= Evalue(1274) * 5)
+    Chara.SetFeat(1274, Evalue(1274) + 1, msg: true);
+```
+This increments the feat tier (up to max 8) as the PC levels. `SetFeat` sets `vBase = value - vSource`, so auto-levelup modifies `vBase`.
+
+### Apply Effect (`FEAT.cs:643-644`)
+
+```csharp
+case 1274:
+    featRef[3] = (a - 7).ToString() ?? "";
+    break;
+```
+Only sets display text (`featRef[3]` shows extra gene slots = tier - 7). Does NOT call `ModBase` on other elements -- all of Predatory Evolution's mechanical effects are hardcoded checks (`HasElement(1274)`, `Evalue(1274)`) throughout the codebase rather than stat modifications.
+
 ## Element ID Quick Reference
 
 Main attributes (from SKILL.cs constants):
@@ -576,3 +709,11 @@ Main attributes (from SKILL.cs constants):
 - **64** = DV, **65** = PV, **66** = HIT
 - **70** = STR, **71** = END, **72** = DEX, **73** = PER, **74** = LER, **75** = WIL, **76** = MAG, **77** = CHA, **78** = LUC, **79** = SPD, **80** = INT (rarely used)
 - **93** = antiMagic, **207** = weightlifting, **303** = manaCapacity, **306** = faith
+
+Key feats (from FEAT.cs constants):
+- **1220** = featFate, **1274** = featSlimeEvolution (Predatory Evolution), **1415** = featFoxMaid
+- **1237** = featRoran, **1228** = featDemigod, **1414** = featWhiteVixen
+- **1242** = featGeneSlot, **1273** = featBloom, **1644** = featBodyParts (Chaos Shape)
+
+Key abilities (from ABILITY.cs constants):
+- **6608** = ActSlime (slime eating action, learned from feat 1274)
