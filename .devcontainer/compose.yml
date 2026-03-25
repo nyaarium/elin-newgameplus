@@ -8,6 +8,9 @@ services:
       pull: true
       args:
         PROJECT_NAME: elin-newgameplus
+    ports:
+      # Project MCP connector
+      - "20002:20002"
     volumes:
       # Workspace
       - ..:/workspace/elin-newgameplus:cached

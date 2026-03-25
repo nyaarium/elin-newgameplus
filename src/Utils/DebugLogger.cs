@@ -45,11 +45,13 @@ public static class DebugLogger
 		return "\"" + value.ToString().Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 	}
 
+	public static readonly string LogPath = @"\\wsl$\Ubuntu-24.04\home\nyaarium\elin-newgameplus\.cursor\debug.log";
+
 	public static void DebugLog(string location, string message, string hypothesisId = null, Dictionary<string, object> data = null)
 	{
 		try
 		{
-			var logPath = @"\\wsl$\Ubuntu-24.04\home\nyaarium\elin-newgameplus\.cursor\debug.log";
+			var logPath = LogPath;
 			var logDir = Path.GetDirectoryName(logPath);
 			if (!Directory.Exists(logDir))
 			{

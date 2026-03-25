@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
+# NuGet temp dir workaround for devcontainer permission issues
+export TMPDIR="/tmp/NuGetScratch_$(id -u)"
+mkdir -p "$TMPDIR"
+
 MODE="${1:-release}"
 
 if [ "$MODE" = "debug" ]; then

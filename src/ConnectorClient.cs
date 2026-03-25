@@ -6,6 +6,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using HarmonyLib;
+using UnityEngine.UI;
 
 namespace NewGamePlus;
 
@@ -16,7 +17,7 @@ namespace NewGamePlus;
 /// </summary>
 public static class ConnectorClient
 {
-	const string ConnectorUrl = "ws://localhost:20000/connector/elin-newgameplus/ws";
+	const string ConnectorUrl = "ws://localhost:20002/ws";
 	const int ReconnectDelayMs = 3000;
 	const int ReceiveBufferSize = 65536;
 
@@ -74,7 +75,7 @@ public static class ConnectorClient
 					}
 				}
 			}
-			catch (Exception ex)
+			catch
 			{
 			}
 
@@ -129,6 +130,10 @@ public static class ConnectorClient
 				case "elinFeat":            responseBody = HandleFeat(argsJson); break;
 				case "elinStat":            responseBody = HandleStat(argsJson); break;
 				case "elinGenes":           responseBody = HandleGenes(); break;
+				case "elinUIFind":          responseBody = HandleUIFind(argsJson); break;
+				case "elinUINode":          responseBody = HandleUINode(argsJson); break;
+				case "elinUIChildren":      responseBody = HandleUIChildren(argsJson); break;
+				case "elinUISet":           responseBody = HandleUISet(argsJson); break;
 				default:
 					responseBody = "{\"error\":\"Unknown tool: " + Esc(tool) + "\"}";
 					break;
@@ -710,6 +715,314 @@ public static class ConnectorClient
 			+ ",\"inferior\":" + inferior
 			+ ",\"currentSlot\":" + currentSlot
 			+ ",\"maxSlot\":" + maxSlot + "}";
+	}
+
+	// --- UI Handlers ---
+
+	static string BuildTransformPath(UnityEngine.Transform t)
+	{
+		var parts = new List<string>();
+		while (t != null)
+		{
+			parts.Insert(0, t.name);
+			t = t.parent;
+		}
+		return string.Join("/", parts);
+	}
+
+	static UnityEngine.Transform FindTransformById(int instanceId)
+	{
+		foreach (var t in UnityEngine.Object.FindObjectsOfType<UnityEngine.Transform>(true))
+			if (t.gameObject.GetInstanceID() == instanceId)
+				return t;
+		return null;
+	}
+
+	static string HandleUIFind(string reqBody)
+	{
+		string name = JsonReadString(reqBody, "name") ?? "";
+		string path = JsonReadString(reqBody, "path");
+		string nameLower = name.ToLowerInvariant();
+		string pathLower = path?.ToLowerInvariant();
+
+		var results = new List<string>();
+		foreach (var t in UnityEngine.Object.FindObjectsOfType<UnityEngine.Transform>(true))
+		{
+			if (results.Count >= 25) break;
+			bool nameMatch = t.name.ToLowerInvariant().IndexOf(nameLower, StringComparison.Ordinal) >= 0;
+			if (!nameMatch) continue;
+			string fullPath = BuildTransformPath(t);
+			if (pathLower != null && fullPath.ToLowerInvariant().IndexOf(pathLower, StringComparison.Ordinal) < 0)
+				continue;
+			int id = t.gameObject.GetInstanceID();
+			bool active = t.gameObject.activeInHierarchy;
+			results.Add("{\"instanceId\":" + id
+				+ ",\"name\":\"" + Esc(t.name) + "\""
+				+ ",\"path\":\"" + Esc(fullPath) + "\""
+				+ ",\"active\":" + (active ? "true" : "false") + "}");
+		}
+		return "{\"results\":[" + string.Join(",", results) + "]}";
+	}
+
+	static string HandleUINode(string reqBody)
+	{
+		string idStr = JsonReadString(reqBody, "instanceId");
+		if (idStr == null || !int.TryParse(idStr, out int instanceId))
+			return "{\"error\":\"instanceId required\"}";
+
+		var t = FindTransformById(instanceId);
+		if (t == null)
+			return "{\"error\":\"GameObject not found\"}";
+
+		var go = t.gameObject;
+		string fullPath = BuildTransformPath(t);
+
+		// Parent
+		string parentJson = "null";
+		if (t.parent != null)
+			parentJson = "{\"instanceId\":" + t.parent.gameObject.GetInstanceID()
+				+ ",\"name\":\"" + Esc(t.parent.name) + "\"}";
+
+		// Children
+		var childParts = new List<string>();
+		for (int i = 0; i < t.childCount; i++)
+		{
+			var c = t.GetChild(i);
+			childParts.Add("{\"instanceId\":" + c.gameObject.GetInstanceID()
+				+ ",\"name\":\"" + Esc(c.name) + "\""
+				+ ",\"active\":" + (c.gameObject.activeInHierarchy ? "true" : "false") + "}");
+		}
+
+		// RectTransform
+		string rtJson = "null";
+		var rt = go.GetComponent<UnityEngine.RectTransform>();
+		if (rt != null)
+		{
+			rtJson = "{\"sizeDelta\":\"" + rt.sizeDelta + "\""
+				+ ",\"anchorMin\":\"" + rt.anchorMin + "\""
+				+ ",\"anchorMax\":\"" + rt.anchorMax + "\""
+				+ ",\"pivot\":\"" + rt.pivot + "\""
+				+ ",\"offsetMin\":\"" + rt.offsetMin + "\""
+				+ ",\"offsetMax\":\"" + rt.offsetMax + "\""
+				+ ",\"rect\":\"" + rt.rect + "\"}";
+		}
+
+		// LayoutElement
+		string leJson = "null";
+		var le = go.GetComponent<LayoutElement>();
+		if (le != null)
+		{
+			leJson = "{\"minWidth\":" + le.minWidth
+				+ ",\"preferredWidth\":" + le.preferredWidth
+				+ ",\"flexibleWidth\":" + le.flexibleWidth
+				+ ",\"minHeight\":" + le.minHeight
+				+ ",\"preferredHeight\":" + le.preferredHeight
+				+ ",\"flexibleHeight\":" + le.flexibleHeight
+				+ ",\"layoutPriority\":" + le.layoutPriority + "}";
+		}
+
+		// ContentSizeFitter
+		string csfJson = "null";
+		var csf = go.GetComponent<ContentSizeFitter>();
+		if (csf != null)
+		{
+			csfJson = "{\"horizontalFit\":\"" + csf.horizontalFit + "\""
+				+ ",\"verticalFit\":\"" + csf.verticalFit + "\"}";
+		}
+
+		// LayoutGroup
+		string lgJson = "null";
+		var lg = go.GetComponent<HorizontalOrVerticalLayoutGroup>();
+		if (lg != null)
+		{
+			string lgType = lg is HorizontalLayoutGroup ? "HorizontalLayoutGroup" : "VerticalLayoutGroup";
+			lgJson = "{\"type\":\"" + lgType + "\""
+				+ ",\"childForceExpandWidth\":" + (lg.childForceExpandWidth ? "true" : "false")
+				+ ",\"childForceExpandHeight\":" + (lg.childForceExpandHeight ? "true" : "false")
+				+ ",\"childControlWidth\":" + (lg.childControlWidth ? "true" : "false")
+				+ ",\"childControlHeight\":" + (lg.childControlHeight ? "true" : "false")
+				+ ",\"spacing\":" + lg.spacing
+				+ ",\"padding\":{\"left\":" + lg.padding.left
+					+ ",\"right\":" + lg.padding.right
+					+ ",\"top\":" + lg.padding.top
+					+ ",\"bottom\":" + lg.padding.bottom + "}}";
+		}
+
+		// Components
+		var compNames = new List<string>();
+		foreach (var comp in go.GetComponents<UnityEngine.Component>())
+			if (comp != null)
+				compNames.Add("\"" + Esc(comp.GetType().Name) + "\"");
+
+		// Text
+		string textJson = "null";
+		var txt = go.GetComponent<Text>();
+		if (txt != null)
+		{
+			string textContent = txt.text ?? "";
+			if (textContent.Length > 100) textContent = textContent.Substring(0, 100);
+			textJson = "{\"text\":\"" + Esc(textContent) + "\""
+				+ ",\"fontSize\":" + txt.fontSize
+				+ ",\"color\":\"" + txt.color + "\""
+				+ ",\"horizontalOverflow\":\"" + txt.horizontalOverflow + "\"}";
+		}
+
+		return "{\"name\":\"" + Esc(go.name) + "\""
+			+ ",\"active\":" + (go.activeInHierarchy ? "true" : "false")
+			+ ",\"instanceId\":" + instanceId
+			+ ",\"path\":\"" + Esc(fullPath) + "\""
+			+ ",\"parent\":" + parentJson
+			+ ",\"children\":[" + string.Join(",", childParts) + "]"
+			+ ",\"rectTransform\":" + rtJson
+			+ ",\"layoutElement\":" + leJson
+			+ ",\"contentSizeFitter\":" + csfJson
+			+ ",\"layoutGroup\":" + lgJson
+			+ ",\"components\":[" + string.Join(",", compNames) + "]"
+			+ ",\"text\":" + textJson + "}";
+	}
+
+	static string HandleUIChildren(string reqBody)
+	{
+		string idStr = JsonReadString(reqBody, "instanceId");
+		if (idStr == null || !int.TryParse(idStr, out int instanceId))
+			return "{\"error\":\"instanceId required\"}";
+
+		int depth = 1;
+		string depthStr = JsonReadString(reqBody, "depth");
+		if (depthStr != null && int.TryParse(depthStr, out int parsedDepth) && parsedDepth > 0)
+			depth = parsedDepth;
+
+		var t = FindTransformById(instanceId);
+		if (t == null)
+			return "{\"error\":\"GameObject not found\"}";
+
+		return "{\"children\":[" + string.Join(",", BuildChildrenJson(t, depth)) + "]}";
+	}
+
+	static List<string> BuildChildrenJson(UnityEngine.Transform parent, int depth)
+	{
+		var list = new List<string>();
+		for (int i = 0; i < parent.childCount; i++)
+		{
+			var c = parent.GetChild(i);
+			string entry = "{\"instanceId\":" + c.gameObject.GetInstanceID()
+				+ ",\"name\":\"" + Esc(c.name) + "\""
+				+ ",\"active\":" + (c.gameObject.activeInHierarchy ? "true" : "false")
+				+ ",\"childCount\":" + c.childCount;
+			if (depth > 1)
+			{
+				var sub = BuildChildrenJson(c, depth - 1);
+				entry += ",\"children\":[" + string.Join(",", sub) + "]";
+			}
+			else
+			{
+				entry += ",\"children\":null";
+			}
+			entry += "}";
+			list.Add(entry);
+		}
+		return list;
+	}
+
+	static string HandleUISet(string reqBody)
+	{
+		string idStr = JsonReadString(reqBody, "instanceId");
+		if (idStr == null || !int.TryParse(idStr, out int instanceId))
+			return "{\"error\":\"instanceId required\"}";
+
+		string component = JsonReadString(reqBody, "component") ?? "";
+		string property  = JsonReadString(reqBody, "property") ?? "";
+		string value     = JsonReadString(reqBody, "value");
+		if (value == null)
+			return "{\"error\":\"value required\"}";
+
+		string resultJson = null;
+		var done = new ManualResetEventSlim(false);
+
+		_pendingActions.Enqueue(() =>
+		{
+			try
+			{
+				var t = FindTransformById(instanceId);
+				if (t == null) { resultJson = "{\"error\":\"GameObject not found\"}"; return; }
+				var go = t.gameObject;
+
+				switch (component)
+				{
+					case "LayoutElement":
+					{
+						var le = go.GetComponent<LayoutElement>();
+						if (le == null) { resultJson = "{\"error\":\"No LayoutElement on GameObject\"}"; return; }
+						float f = float.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+						switch (property)
+						{
+							case "minWidth":         le.minWidth = f; break;
+							case "preferredWidth":   le.preferredWidth = f; break;
+							case "flexibleWidth":    le.flexibleWidth = f; break;
+							case "minHeight":        le.minHeight = f; break;
+							case "preferredHeight":  le.preferredHeight = f; break;
+							case "flexibleHeight":   le.flexibleHeight = f; break;
+							case "layoutPriority":   le.layoutPriority = (int)f; break;
+							default: resultJson = "{\"error\":\"Unknown LayoutElement property: " + Esc(property) + "\"}"; return;
+						}
+						resultJson = "{\"ok\":true,\"component\":\"LayoutElement\",\"property\":\"" + Esc(property) + "\",\"value\":" + f + "}";
+						break;
+					}
+					case "RectTransform":
+					{
+						var rt = go.GetComponent<UnityEngine.RectTransform>();
+						if (rt == null) { resultJson = "{\"error\":\"No RectTransform on GameObject\"}"; return; }
+						float f = float.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+						switch (property)
+						{
+							case "offsetMinX":  { var v = rt.offsetMin; v.x = f; rt.offsetMin = v; break; }
+							case "offsetMinY":  { var v = rt.offsetMin; v.y = f; rt.offsetMin = v; break; }
+							case "offsetMaxX":  { var v = rt.offsetMax; v.x = f; rt.offsetMax = v; break; }
+							case "offsetMaxY":  { var v = rt.offsetMax; v.y = f; rt.offsetMax = v; break; }
+							case "sizeDeltaX":  { var v = rt.sizeDelta; v.x = f; rt.sizeDelta = v; break; }
+							case "sizeDeltaY":  { var v = rt.sizeDelta; v.y = f; rt.sizeDelta = v; break; }
+							default: resultJson = "{\"error\":\"Unknown RectTransform property: " + Esc(property) + "\"}"; return;
+						}
+						resultJson = "{\"ok\":true,\"component\":\"RectTransform\",\"property\":\"" + Esc(property) + "\",\"value\":" + f + "}";
+						break;
+					}
+					case "Text":
+					{
+						var txt = go.GetComponent<Text>();
+						if (txt == null) { resultJson = "{\"error\":\"No Text component on GameObject\"}"; return; }
+						switch (property)
+						{
+							case "text":
+								txt.text = value;
+								resultJson = "{\"ok\":true,\"component\":\"Text\",\"property\":\"text\",\"value\":\"" + Esc(value) + "\"}";
+								break;
+							case "fontSize":
+								txt.fontSize = int.Parse(value);
+								resultJson = "{\"ok\":true,\"component\":\"Text\",\"property\":\"fontSize\",\"value\":" + txt.fontSize + "}";
+								break;
+							default: resultJson = "{\"error\":\"Unknown Text property: " + Esc(property) + "\"}"; return;
+						}
+						break;
+					}
+					default:
+						resultJson = "{\"error\":\"Unknown component: " + Esc(component) + "\"}";
+						break;
+				}
+			}
+			catch (Exception ex)
+			{
+				resultJson = "{\"error\":\"" + Esc(ex.Message) + "\"}";
+			}
+			finally
+			{
+				done.Set();
+			}
+		});
+
+		if (!done.Wait(TimeSpan.FromSeconds(5)))
+			return "{\"error\":\"timeout - game may be paused or loading\"}";
+
+		return resultJson;
 	}
 
 	// --- JSON helpers ---

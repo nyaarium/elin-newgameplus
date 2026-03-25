@@ -80,5 +80,42 @@ export default function (z) {
       description: "List all installed genes on the player character. Returns gene details including element values.",
       schema: z.object({}),
     },
+    {
+      name: "elinUIFind",
+      title: "Find Unity UI GameObjects",
+      description: "Find GameObjects by name. Returns matches with instance IDs. Searches all objects including inactive ones.",
+      schema: z.object({
+        name: z.string().describe("Name to search for - case-insensitive substring match"),
+        path: z.string().optional().describe("If provided, also match against full hierarchy path (e.g. 'Root/Parent/Child')"),
+      }),
+    },
+    {
+      name: "elinUINode",
+      title: "Get Unity UI Node Details",
+      description: "Get full details of a GameObject by instance ID. Returns hierarchy, RectTransform, LayoutElement, ContentSizeFitter, LayoutGroup, and component info.",
+      schema: z.object({
+        instanceId: z.number().describe("GameObject instance ID (from elinUIFind)"),
+      }),
+    },
+    {
+      name: "elinUIChildren",
+      title: "List Unity UI Children",
+      description: "List children of a GameObject recursively up to a given depth.",
+      schema: z.object({
+        instanceId: z.number().describe("GameObject instance ID"),
+        depth: z.number().optional().default(1).describe("How many levels deep to recurse (default 1)"),
+      }),
+    },
+    {
+      name: "elinUISet",
+      title: "Set Unity UI Property",
+      description: "Set a property on a component of a GameObject. Supports: LayoutElement (minWidth, preferredWidth, flexibleWidth, minHeight, preferredHeight, flexibleHeight, layoutPriority), RectTransform (offsetMinX, offsetMinY, offsetMaxX, offsetMaxY, sizeDeltaX, sizeDeltaY), Text (fontSize, text).",
+      schema: z.object({
+        instanceId: z.number().describe("GameObject instance ID"),
+        component: z.string().describe("Component name: 'LayoutElement', 'RectTransform', or 'Text'"),
+        property: z.string().describe("Property name (e.g. 'minWidth', 'offsetMinX', 'text', 'fontSize')"),
+        value: z.string().describe("Value to set (as string)"),
+      }),
+    },
   ];
 }

@@ -21,6 +21,7 @@ public class NewGamePlus : BaseUnityPlugin
 		ModLocalization.PopulateLocalizedStrings();
 		new Harmony("nyaarium.newgameplusplus").PatchAll();
 #if DEVMODE
+		try { System.IO.File.Delete(DebugLogger.LogPath); } catch { }
 		ConnectorClient.Start();
 #endif
 	}
