@@ -5,7 +5,7 @@
   <author>nyaarium</author>
   <tags>General</tags>
   <loadPriority>100</loadPriority>
-  <version>1.3.1</version>
+  <version>1.3.2</version>
   <description>
     [h2]New Game++[/h2]
 
@@ -102,6 +102,12 @@
     [/list]
 
     [h2]Updates[/h2]
+
+    [b]2026.03.24[/b]
+
+    [list]
+    [*]Added dynamic warning labels in Mod Options for skill levels, feats, and fame interactions.
+    [/list]
 
     [b]2026.03.20[/b]
 

@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Xml.Linq;
 using BepInEx;
 using BepInEx.Configuration;
+using EvilMask.Elin.ModOptions;
 
 namespace NewGamePlus;
 
@@ -20,6 +21,21 @@ public class UIOption
 	public string TooltipKey { get; set; }
 	public Dictionary<string, string> LabelTranslations { get; set; }
 	public Dictionary<string, string> TooltipTranslations { get; set; }
+	public UIWarning Warning { get; set; }
+}
+
+public class UIWarning
+{
+	public string XmlId { get; set; }
+	public string Key { get; set; }
+	public Dictionary<string, string> Translations { get; set; }
+	public List<WarningCondition> Conditions { get; set; }
+}
+
+public class WarningCondition
+{
+	public string ToggleId { get; set; }
+	public bool ExpectedChecked { get; set; }
 }
 
 public class LocalizedString
@@ -332,6 +348,22 @@ public static class ModLocalization
 				{ "EN", "Includes feats you've purchased. Unchecking this will refund all points." },
 				{ "JP", "購入した特技を含めます。これをオフにすると、すべてのポイントが返金されます。" },
 				{ "CN", "包含您购买的特技。取消选中此选项将退还所有点数。" }
+			},
+			Warning = new UIWarning
+			{
+				XmlId = "warningFeats",
+				Key = "WarningFeats",
+				Translations = new Dictionary<string, string>
+				{
+					{ "EN", "Purchasable Feats will not be included when Player Levels is off." },
+					{ "JP", "プレイヤーレベルがオフの場合、購入可能な特技は含まれません。" },
+					{ "CN", "当玩家等级关闭时，可购买的特技将不会被包含。" }
+				},
+				Conditions = new List<WarningCondition>
+				{
+					new WarningCondition { ToggleId = "importIncludeAcquiredFeatsToggle", ExpectedChecked = true },
+					new WarningCondition { ToggleId = "importIncludePlayerLevelToggle", ExpectedChecked = false }
+				}
 			}
 		},
 		new UIOption
@@ -345,15 +377,31 @@ public static class ModLocalization
 			TooltipKey = "ImportIncludeSkillsTooltip",
 			LabelTranslations = new Dictionary<string, string>
 			{
-				{ "EN", "Include Skill Levels (Warning: you will level up slower)" },
-				{ "JP", "スキルレベルを含める（警告：レベルアップが遅くなります）" },
-				{ "CN", "包含技能等级（警告：升级速度会变慢）" }
+				{ "EN", "Include Skill Levels" },
+				{ "JP", "スキルレベルを含める" },
+				{ "CN", "包含技能等级" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
 				{ "EN", "Includes your skill levels. High skills gain exp slower, which slows player level-ups. Consider including Player Level if you include this." },
 				{ "JP", "スキルレベルを含めます。高レベルのスキルは経験値の獲得が遅くなり、プレイヤーのレベルアップも遅くなります。これを含める場合はプレイヤーレベルも含めることを検討してください。" },
 				{ "CN", "包含您的技能等级。高等级技能获取经验更慢，会减缓玩家升级速度。如果包含此项，建议同时包含玩家等级。" }
+			},
+			Warning = new UIWarning
+			{
+				XmlId = "warningSkillLevels",
+				Key = "WarningSkillLevels",
+				Translations = new Dictionary<string, string>
+				{
+					{ "EN", "High skills slow down player leveling. Recommended to disable this option, or include Player Levels." },
+					{ "JP", "高レベルスキルはプレイヤーのレベルアップを遅くします。このオプションをオフにするか、プレイヤーレベルを含めることをお勧めします。" },
+					{ "CN", "高等级技能会减缓玩家升级速度。建议关闭此选项，或同时包含玩家等级。" }
+				},
+				Conditions = new List<WarningCondition>
+				{
+					new WarningCondition { ToggleId = "importIncludeSkillsToggle", ExpectedChecked = true },
+					new WarningCondition { ToggleId = "importIncludePlayerLevelToggle", ExpectedChecked = false }
+				}
 			}
 		},
 		new UIOption
@@ -389,15 +437,30 @@ public static class ModLocalization
 			TooltipKey = "ImportIncludeFameTooltip",
 			LabelTranslations = new Dictionary<string, string>
 			{
-				{ "EN", "Include fame (Warning: your tax will start high)" },
-				{ "JP", "名声を含める（注意：税が高く始まります）" },
-				{ "CN", "包含名声（注意：税款会从较高开始）" }
+				{ "EN", "Include Fame" },
+				{ "JP", "名声を含める" },
+				{ "CN", "包含名声" }
 			},
 			TooltipTranslations = new Dictionary<string, string>
 			{
-				{ "EN", "Includes your fame. Tax is based on fame. Importing fame will start you with high taxes." },
-				{ "JP", "あなたの名声を含めます。税は名声に基づくため、名声をインポートするとはじめから高い税額になります。" },
-				{ "CN", "包含您的名声。税款基于名声。导入名声会使您一开始就面临高额税款。" }
+				{ "EN", "Includes your fame." },
+				{ "JP", "名声を含めます。" },
+				{ "CN", "包含您的名声。" }
+			},
+			Warning = new UIWarning
+			{
+				XmlId = "warningFame",
+				Key = "WarningFame",
+				Translations = new Dictionary<string, string>
+				{
+					{ "EN", "Tax is based on fame. You will start with high taxes." },
+					{ "JP", "税金は名声に基づきます。高額の税金から始まります。" },
+					{ "CN", "税款基于名声。您将从高额税款开始。" }
+				},
+				Conditions = new List<WarningCondition>
+				{
+					new WarningCondition { ToggleId = "importIncludeFameToggle", ExpectedChecked = true }
+				}
 			}
 		},
 		new UIOption
@@ -669,7 +732,7 @@ public static class ModLocalization
 				{ "JP", "現在のキャラクターデータをエクスポートして、新しいゲームに引き継ぎます。" },
 				{ "CN", "导出当前角色数据以在新游戏中继承。" }
 			}
-		}
+		},
 	};
 
 	public static List<UIOption> AllOptions => InGameOptions.Concat(ImportOptions).ToList();
@@ -754,6 +817,23 @@ public static class ModLocalization
 		}
 	}
 
+	public static void RegisterWithModOptions(ModOptionController controller)
+	{
+		foreach (LocalizedString str in GeneralStrings)
+		{
+			foreach (var kvp in str.Translations)
+				controller.SetTranslation(kvp.Key, str.Key, kvp.Value);
+		}
+		foreach (UIOption option in AllOptions)
+		{
+			if (option.Warning != null)
+			{
+				foreach (var kvp in option.Warning.Translations)
+					controller.SetTranslation(kvp.Key, option.Warning.Key, kvp.Value);
+			}
+		}
+	}
+
 	public static void RegisterAll(BaseUnityPlugin plugin)
 	{
 		foreach (UIOption option in AllOptions)
@@ -768,6 +848,8 @@ public static class ModLocalization
 		foreach (UIOption option in AllOptions)
 		{
 			AddOptionStrings(option.LabelKey, option.TooltipKey, option.LabelTranslations, option.TooltipTranslations);
+			if (option.Warning != null)
+				AddString(option.Warning.Key, option.Warning.Translations);
 		}
 
 		foreach (LocalizedString str in GeneralStrings)
@@ -784,6 +866,63 @@ public static class ModLocalization
 			if (configEntry != null)
 			{
 				UI.UIController.RegisterImportToggle(builder, option.ToggleId, option.LabelKey, option.TooltipKey, configEntry);
+			}
+
+			if (option.Warning != null)
+			{
+				var warning = option.Warning;
+				EvilMask.Elin.ModOptions.UI.OptLabel label = builder.GetPreBuild<EvilMask.Elin.ModOptions.UI.OptLabel>(warning.XmlId);
+				if (label != null)
+				{
+					// Phase 1: Clear baked-in minWidth, tell HyphenationJpn to use
+					// parent width, force layout so parent is sized, then set text.
+					// Phase 2: After text is set, suppress LE width so UIText's
+					// preferred width doesn't inflate the column.
+					UnityEngine.UI.LayoutElement warnLE = null;
+					if (label.Base != null)
+					{
+						warnLE = ((UnityEngine.Component)label.Base).GetComponent<UnityEngine.UI.LayoutElement>();
+						if (warnLE != null)
+							warnLE.minWidth = -1;
+						var hyphen = ((UnityEngine.Component)label.Base).GetComponent<HyphenationJpn>();
+						if (hyphen != null)
+							hyphen.usePreferredWidth = false;
+						UnityEngine.Canvas.ForceUpdateCanvases();
+					}
+					label.Text = Get(warning.Key);
+					label.Size = 12;
+					if (warnLE != null)
+					{
+						warnLE.preferredWidth = 0;
+						warnLE.minWidth = 0;
+						warnLE.layoutPriority = 2;
+					}
+
+					Action updateVisibility = () =>
+					{
+						if (label.Base == null) return;
+						bool show = true;
+						foreach (var cond in warning.Conditions)
+						{
+							var toggle = builder.GetPreBuild<EvilMask.Elin.ModOptions.UI.OptToggle>(cond.ToggleId);
+							if ((toggle?.Checked ?? false) != cond.ExpectedChecked)
+							{
+								show = false;
+								break;
+							}
+						}
+						((UnityEngine.Component)label.Base).gameObject.SetActive(show);
+					};
+
+					updateVisibility();
+
+					foreach (var cond in warning.Conditions)
+					{
+						var toggle = builder.GetPreBuild<EvilMask.Elin.ModOptions.UI.OptToggle>(cond.ToggleId);
+						if (toggle != null)
+							toggle.OnValueChanged += (_) => updateVisibility();
+					}
+				}
 			}
 		}
 	}

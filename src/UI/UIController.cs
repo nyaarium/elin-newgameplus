@@ -58,6 +58,8 @@ public static class UIController
 			ModLocalization.RegisterUIToggles(builder);
 		};
 
+		ModLocalization.RegisterWithModOptions(controller);
+
 		controller.OnBuildUI += onBuildUIHandler;
 	}
 

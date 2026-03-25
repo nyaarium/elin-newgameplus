@@ -30,6 +30,12 @@
                     <contentId>ImportIncludeAcquiredFeats</contentId>
                     <tooltip>ImportIncludeAcquiredFeatsTooltip</tooltip>
                 </toggle>
+                <text id="warningFeats" color="#c00000">WarningFeats</text>
+                <toggle id="importIncludeSkillsToggle">
+                    <contentId>ImportIncludeSkills</contentId>
+                    <tooltip>ImportIncludeSkillsTooltip</tooltip>
+                </toggle>
+                <text id="warningSkillLevels" color="#c00000">WarningSkillLevels</text>
                 <toggle id="importIncludeAbilitiesToggle">
                     <contentId>ImportIncludeAbilities</contentId>
                     <tooltip>ImportIncludeAbilitiesTooltip</tooltip>
@@ -37,10 +43,6 @@
                 <toggle id="importIncludeAttributesToggle">
                     <contentId>ImportIncludeAttributes</contentId>
                     <tooltip>ImportIncludeAttributesTooltip</tooltip>
-                </toggle>
-                <toggle id="importIncludeSkillsToggle">
-                    <contentId>ImportIncludeSkills</contentId>
-                    <tooltip>ImportIncludeSkillsTooltip</tooltip>
                 </toggle>
                 <toggle id="importIncludePietyToggle">
                     <contentId>ImportIncludePiety</contentId>
@@ -54,6 +56,7 @@
                     <contentId>ImportIncludeFame</contentId>
                     <tooltip>ImportIncludeFameTooltip</tooltip>
                 </toggle>
+                <text id="warningFame" color="#c00000">WarningFame</text>
                 <toggle id="importIncludeInfluenceToggle">
                     <contentId>ImportIncludeInfluence</contentId>
                     <tooltip>ImportIncludeInfluenceTooltip</tooltip>
