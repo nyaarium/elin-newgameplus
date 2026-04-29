@@ -11,7 +11,7 @@ using UnityEngine.UI;
 namespace NewGamePlus;
 
 /// <summary>
-/// WebSocket client that connects to the agent-team-bridge connector and handles tool invocations.
+/// WebSocket client that connects to the switchboard connector and handles tool invocations.
 /// Connects to ws://localhost:20000/ws. The connector routes MCP tool calls from IDE agents.
 /// All reads are from already-initialized static SourceThing tables (no mutation).
 /// </summary>
