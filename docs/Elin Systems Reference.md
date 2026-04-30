@@ -43,23 +43,44 @@
 
 ### Card Storage Layout
 
-- **`Card._ints`** (int array) - Primary storage for card properties. Key indices:
-  - `[0]`: `_bits1` (packed bitfield — isOn, isHidden, isCrafted, etc.)
-  - `[1]`: `uid` (unique ID) for containers; spell/ability type ID for scrolls/whips
-  - `[2]`: `_bits2` (packed bitfield — noSell, isCopy, etc.)
+`BaseCard` declares three sparse dictionaries (`BaseCard.cs:6-13`): `mapObj`, `mapInt`, `mapStr`. `Card` adds the fixed-size `_ints[30]` array, the packed `_bits1` / `_bits2`, and the `sockets` list on top of those.
+
+- **`Card._ints`** (`int[30]`, declared on `Card`) - Fixed-size primary array. Used indices on `Card`:
+  - `[0]`: `_bits1` packed bitfield (isOn, isHidden, isCrafted, etc.)
+  - `[1]`: `uid` (unique ID); also stores spell/ability type ID for scrolls/whips
+  - `[2]`: `_bits2` packed bitfield (noSell, isCopy, etc.)
   - `[4]`: `idMaterial` (material ID)
+  - `[5]`: `dir` (rotation)
   - `[6]`: `Num` (stack quantity)
+  - `[7]`: `_x` (pos.x)
+  - `[8]`: **unused on `Card`**. Do not confuse with `mapInt[8]` = `c_containerSize`.
+  - `[9]`: `_z` (pos.z)
+  - `[10]`: `genLv`
   - `[14]`: `hp` (current hit points)
   - `[24]`: `feat` (unspent feat points)
   - `[25]`: `LV` (character level)
   - `[26]`: `exp` (experience points)
-- **`Card._bits1` / `Card._bits2`** - Packed bitfields unpacked from `_ints[0]` and `_ints[2]` during deserialization via `SetInt()`. Game never calls `ChangeMaterial` on load — it calls `_bits1.SetInt(_ints[0])` and `_bits2.SetInt(_ints[2])` directly.
-- **`Card.mapInt`** (Dictionary<int, int>) - Sparse property map for card-specific integers:
-  - Key 3: `c_dyeMat` (dye material)
-  - Key 7: `c_charges` (charges remaining)
-  - Key 27: `c_ammo` (ammo count)
-  - Other keys used for various card properties
-- **`Card.sockets`** (List<int>) - Weapon mod sockets for ranged weapons. Count = list length. Value: 0 = empty slot, otherwise `elementId * 1000 + encLv`.
+- **`Card._bits1` / `Card._bits2`** - Packed bitfields unpacked from `_ints[0]` and `_ints[2]` during deserialization via `SetInt()`. Game never calls `ChangeMaterial` on load. It calls `_bits1.SetInt(_ints[0])` and `_bits2.SetInt(_ints[2])` directly.
+- **`Card.mapInt`** (`Dictionary<int, int>`, sparse) - Property keys defined in `CINT.cs`. Common entries on containers:
+  - `3`: `c_dyeMat` (dye material)
+  - `7`: `c_charges` (charges remaining)
+  - `8`: `c_containerSize` (container grid: `width * 100 + height`; 0 means default 8x5)
+  - `15`: `c_indexContainerIcon` (icon variant)
+  - `21`: `c_priceFix` (price modifier; shop pricing)
+  - `27`: `c_ammo` (ammo count)
+  - `50`: `c_lockLv` (lock level)
+  - `129`: `isAmbushWarned` (added in EA 23.299; no `c_*` getter, accessed via `GetBool(129)` / `GetInt(129)`)
+- **`Card.mapObj`** (`Dictionary<int, object>`, sparse) - Boxed object keys defined in `COBJ.cs`. Common entries on containers:
+  - `2`: `c_windowSaveData` (`Window.SaveData`; per-container UI prefs; getter at `Card.cs:1848-1858`)
+  - `10`: `c_copyContainer` (`Thing` reference for deposit/copy boxes; getter at `Card.cs:1836-1846`)
+  - `12`: `c_containerUpgrade` (`ContainerUpgrade` with `cap` and `cool`; getter at `Card.cs:1908-1918`)
+  - The `c_containerUpgrade` getter lazy-creates a default `ContainerUpgrade` on read. The `c_windowSaveData` getter does NOT lazy-create (returns null if absent).
+- **`Card.mapStr`** (`Dictionary<int, string>`, sparse) - String keys defined in `CSTR.cs`. Common entries on containers:
+  - `1`: `c_altName` (player-renamed name)
+  - `2`: `c_altName2`
+  - `5`: `c_idRefCard` (chara reference ID stuffed in container, e.g. corpses)
+  - `12`: `c_extraNameRef` (extra name suffix)
+- **`Card.sockets`** (`List<int>`) - Weapon mod sockets for ranged weapons. Count = list length. Value: 0 = empty slot, otherwise `elementId * 1000 + encLv`.
 
 ### Chara Element Containers
 
@@ -410,6 +431,76 @@
   - If element 41 (ranged): assigns to `slotRange`
   - Does NOT trigger equip refresh or element modification — just adds the slot
 - **`CharaBody.RefreshBodyParts()`** - Rebuilds internal slot references (main hand, off hand, range) from the current `slots` list. Should be called after adding/removing body parts.
+
+## Inventory Containers
+
+### `ThingContainer`
+
+- **`Card.things`** (`ThingContainer`, inherits `List<Thing>`) - Container's children plus grid metadata. Constructed once per Card; grid dimensions exposed via `width`/`height` int fields.
+- **`ThingContainer.SetOwner(Card owner)`** at `ThingContainer.cs:69-79` - Sets `owner`, then `width = c_containerSize / 100`, `height = c_containerSize % 100`. If `width == 0`, defaults to 8x5. Called once during `Card.Create` (transitively from `ThingGen.Create`, when `c_containerSize` is still empty), and again in `Card._OnDeserialized` and in `Card.Duplicate` at `Card.cs:3559-3565` (the latter is guarded by `if (thing.c_containerSize != 0)`). Modifying `c_containerSize` later does NOT auto-resize the live container; `SetOwner` must be re-run.
+- **`ThingContainer.SetSize(int w, int h)`** at line 366 - Writes `owner.c_containerSize = w * 100 + h`, then re-runs `SetOwner(owner)` (which re-derives `width`/`height` from the new value). Use this when changing size at runtime. Does NOT call `RefreshGrid()`.
+- **`ThingContainer.ChangeSize(int w, int h)`** at lines 81-88 - Sets `width`/`height` directly, writes `c_containerSize = w * 100 + h`, then calls `RefreshGrid()`. Used when the visible grid layout must redraw.
+- **`ThingContainer.GridSize`** => `width * height` (line 48).
+- **`ThingContainer.IsMagicChest`** => `owner.trait is TraitMagicChest` (line 54).
+- **`ThingContainer.MaxCapacity`** at lines 57-67 - Returns `100 + owner.c_containerUpgrade.cap` for magic chests, else `GridSize`. Magic chests do not write `c_containerSize`; their capacity scales from the upgrade row instead.
+
+### `ContainerUpgrade`
+
+- **`ContainerUpgrade.cs`** - Two `[JsonProperty]` ints: `cap` (storage wrench bonus, +20 per stack) and `cool` (fridge wrench flag, 0 or 1). Stored in `mapObj[12]`.
+- **`TraitMagicChest.IsFridge`** at `TraitMagicChest.cs:23` => `owner.c_containerUpgrade.cool > 0`.
+- **`TraitMagicChest.OriginalElectricity`** at line 3 => `base + ((IsFridge ? 50 : 0) + cap / 5) * -1` (electricity cost scales with cap and fridge state).
+
+### `Window.SaveData` (per-container UI prefs)
+
+- Defined inside `Window` at `Plugins.UI/Window.cs:98-592`. Marked `[JsonObject(MemberSerialization.OptIn)]`.
+- Persisted fields: `int[20] ints` (window position, anchors, autodump enum, sharedType, ContainerFlag, columns, customAnchor, category mode, sortMode, color, priority, etc.), `HashSet<int> cats` (selected category IDs), `string filter` (text filter).
+- Hidden `BitArray32 b1` field is NOT `[JsonProperty]`, but rides along: `[OnSerializing]` at line 562 packs `b1.Bits` into `ints[0]`; `[OnDeserialized]` at line 568 unpacks it back. Newtonsoft.Json honors these `System.Runtime.Serialization` callbacks. Round-trip via `JsonConvert.SerializeObject`/`DeserializeObject<Window.SaveData>` is lossless for `b1`'s booleans (open, useBG, excludeDump, excludeCraft, alwaysSort, sort_ascending, etc.).
+- **`Card.GetWindowSaveData()`** at `Card.cs:2557-2569` - Returns `Window.dictData["LayerInventoryFloatMain0"]` if `IsPC`, `Window.dictData["ChestMerchant"]` if `trait is TraitChestMerchant`, else `c_windowSaveData` from `mapObj[2]`. So PC main-inventory and merchant-chest UI prefs live in a static `Window.dictData`, NOT on the Card. All other containers (chests, backpacks, bank, shipping, delivery, toolbelt) read from their own `c_windowSaveData`.
+- **Lazy-init**: `LayerInventory.CreateContainerPC` and `CreateContainer` (`LayerInventory.cs:455-478`, `:570-581`) lazy-create `c_windowSaveData` on first open if null. Special default: shipping chest gets `autodump = AutodumpFlag.none`. Pre-populated `c_windowSaveData` skips the lazy-init branch entirely.
+
+### Container Trait Taxonomy
+
+| Trait | Extends | `IsContainer` | `IsSpecialContainer` |
+|---|---|---|---|
+| `TraitBaseContainer` | `Trait` | `true` (override at line 71) | `false` |
+| `TraitContainer` | `TraitBaseContainer` | inherited | `false` |
+| `TraitMagicChest` | `TraitContainer` | inherited | `true` |
+| `TraitDeposit` (bank) | `TraitContainer` | inherited | `true` |
+| `TraitShippingChest` | `TraitContainer` | inherited | `true` |
+| `TraitDeliveryChest` | `TraitContainer` | inherited | `true` |
+| `TraitToolBelt` | `TraitContainer` | inherited | `false` |
+| `TraitChestMerchant` | `TraitContainer` | inherited | `false` |
+
+`Card.IsContainer => trait.IsContainer` (`Card.cs:2129`). `IsSpecialContainer` gates the rename UI (`UIInventory.cs:695` hides changeName button when `IsSpecialContainer && !IsMagicChest`), the wrench grid-extend, and a few auto-dump rules.
+
+### Wrench Upgrade Gating
+
+`TraitWrench.IsValidTarget(Thing t)` at `TraitWrench.cs:7-59` requires `t.IsInstalled` first (so equipped or carried containers are unreachable), then by wrench ID:
+
+- `storage` and `fridge`: target must be `TraitMagicChest`. `storage` adds 20 to `c_containerUpgrade.cap`. `fridge` sets `c_containerUpgrade.cool = 1` AND `t.elements.SetBase(405, 50)` (electricity element). `fridge` is one-shot (refuses to apply twice).
+- `extend_v` and `extend_h`: rejects `TraitMagicChest`, `TraitDeliveryChest`, and any `IsSpecialContainer`. Targets regular `TraitContainer` only. The upgrade is **single-shot per axis**: `Upgrade()` refuses unless `t.things.height == traitContainer.Height` (or `width == Width` for `extend_h`), so once `SetSize` grows the dimension by 1, a second wrench fails the equality gate.
+- `bed`: `TraitBed`; increments `c_containerSize` directly (debug mode adds 1000 for testing).
+- `tent_seabed`, `tent_soil`, `tent_elec`: target `TraitTent`; environment-checked.
+
+Implication: bank, shipping, delivery, and toolbelt cannot be wrench-modified through normal play. Bank is rejected by `IsSpecialContainer`. Shipping is rejected by `IsSpecialContainer`. Delivery is rejected explicitly AND by `IsSpecialContainer`. Toolbelt is equipped (not installed). Their `c_containerUpgrade` is always default-zero unless modded.
+
+### Singleton Containers
+
+`CardManager` holds three `Thing` singleton fields (`CardManager.cs:52-58`), spawned in `Game._Create` (`Game.cs:799-801`) before `Game.StartNewGame` runs:
+
+- **`container_shipping`** (id `"container_shipping"`, `TraitShippingChest`) - Outgoing daily-revenue chest. `GameDate.cs:282+` (`ShipGoods`) processes daily ship.
+- **`container_deliver`** (id `"container_delivery"` despite the field name; `TraitDeliveryChest`) - Incoming mail/orders. `GameDate.cs:418+` (`ShipPackages`) drains daily.
+- **`container_deposit`** (id `"container_deposit"`, `TraitDeposit`) - Bank vault for deposit money and items.
+
+Plus a per-character toolbelt:
+
+- **Toolbelt** - Reachable via `body.slots` filter; `id == "toolbelt"`, `TraitToolBelt`. Spawned with the character. Despite `IsSpecialContainer == false`, it cannot be wrench-extended because it is equipped (not installed) and `IsValidTarget` requires `IsInstalled`.
+
+Plus a per-faction-branch stash:
+
+- **`FactionBranch.stash`** (`FactionBranch.cs:85`) - `container_salary` Thing, created in `OnCreate(Zone)` per branch. Lives with the branch.
+
+Singletons whose Card is not respawned across runs need their `mapObj`/`mapStr` settings copied directly. They do not flow through normal Thing-export paths because the Card on the destination side already exists.
 
 ## Conditions & Curing
 
