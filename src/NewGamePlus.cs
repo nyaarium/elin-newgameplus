@@ -8,7 +8,7 @@ using HarmonyLib;
 namespace NewGamePlus;
 
 [BepInDependency("evilmask.elinplugins.modoptions", BepInEx.BepInDependency.DependencyFlags.SoftDependency)]
-[BepInPlugin("nyaarium.newgameplusplus", "New Game++", "1.3.2")]
+[BepInPlugin("nyaarium.newgameplusplus", "New Game++", "1.3.3")]
 public class NewGamePlus : BaseUnityPlugin
 {
 	private static NewGamePlus instance;
@@ -91,7 +91,11 @@ public class NewGamePlus : BaseUnityPlugin
 			wornEquipment = itemResult.wornEquipment,
 			containerContents = itemResult.containerContents,
 			bankItems = CharacterExporter.ExportBankItems(),
-			charaGenes = ExportGenes(c)
+			charaGenes = ExportGenes(c),
+			toolbeltSettings = CharacterExporter.ExportToolbeltSettings(c),
+			bankSettings = CharacterExporter.ExportBankSettings(),
+			shippingSettings = CharacterExporter.ExportShippingSettings(),
+			deliverSettings = CharacterExporter.ExportDeliverSettings()
 		};
 
 		string dumpFilePath = GetDumpFilePath();

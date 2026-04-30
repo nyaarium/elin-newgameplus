@@ -273,6 +273,54 @@ public static class CharacterExporter
 		return conditions;
 	}
 
+	public static ContainerSettingsData ExportToolbeltSettings(Chara c)
+	{
+		return ExtractSingletonContainerSettings(ItemSlotManager.GetToolbeltContainer(c));
+	}
+
+	public static ContainerSettingsData ExportBankSettings()
+	{
+		Card bank = (Card)EClass.game?.cards?.container_deposit;
+		return ExtractSingletonContainerSettings(bank);
+	}
+
+	public static ContainerSettingsData ExportShippingSettings()
+	{
+		Card shipping = (Card)EClass.game?.cards?.container_shipping;
+		return ExtractSingletonContainerSettings(shipping);
+	}
+
+	public static ContainerSettingsData ExportDeliverSettings()
+	{
+		Card deliver = (Card)EClass.game?.cards?.container_deliver;
+		return ExtractSingletonContainerSettings(deliver);
+	}
+
+	private static ContainerSettingsData ExtractSingletonContainerSettings(Card container)
+	{
+		if (container == null) return null;
+
+		var caps = ThingUtils.ExtractContainerSettings(container);
+		Dictionary<int, string> mapStr = null;
+		if (container.mapStr != null && container.mapStr.Count > 0)
+		{
+			mapStr = new Dictionary<int, string>(container.mapStr);
+		}
+
+		if (mapStr == null && !caps.cap.HasValue && !caps.cool.HasValue && string.IsNullOrEmpty(caps.windowJson))
+		{
+			return null;
+		}
+
+		return new ContainerSettingsData
+		{
+			mapStr = mapStr,
+			containerUpgradeCap = caps.cap,
+			containerUpgradeCool = caps.cool,
+			windowSaveDataJson = caps.windowJson
+		};
+	}
+
 	public static List<MutationData> ExportMutations(Chara c)
 	{
 		List<MutationData> mutations = new List<MutationData>();

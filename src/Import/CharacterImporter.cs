@@ -288,26 +288,71 @@ public static class CharacterImporter
 			ImportBodyParts(c, dumpData.charaBodyParts);
 		}
 
-		if (ModConfig.GetOption("includeBank")?.Value == true && dumpData.bankItems != null && dumpData.bankItems.Count > 0)
+		if (ModConfig.GetOption("includeBank")?.Value == true)
 		{
 			Card bankContainer = (Card)EClass.game.cards.container_deposit;
 			if (bankContainer != null && bankContainer.IsContainer)
 			{
-				foreach (ThingData bankItemData in dumpData.bankItems)
+				// Apply previously-exported bank settings (custom name, window prefs, upgrades) to the existing
+				// singleton bank container. Done independently of bankItems so a renamed/upgraded but empty bank
+				// still carries its settings.
+				if (dumpData.bankSettings != null)
 				{
-					try
+					ThingUtils.ApplyContainerSettings(
+						bankContainer,
+						dumpData.bankSettings.mapStr,
+						dumpData.bankSettings.containerUpgradeCap,
+						dumpData.bankSettings.containerUpgradeCool,
+						dumpData.bankSettings.windowSaveDataJson);
+				}
+
+				if (dumpData.bankItems != null && dumpData.bankItems.Count > 0)
+				{
+					foreach (ThingData bankItemData in dumpData.bankItems)
 					{
-						Card bankItem = ThingUtils.RestoreThingFromData(bankItemData);
-						if (bankItem != null)
+						try
 						{
-							StorageAuto.InsertToSubContainer(bankContainer, bankItem.Thing);
+							Card bankItem = ThingUtils.RestoreThingFromData(bankItemData);
+							if (bankItem != null)
+							{
+								StorageAuto.InsertToSubContainer(bankContainer, bankItem.Thing);
+							}
+						}
+						catch (System.Exception ex)
+						{
+							Msg.SayRaw($"NG+: Failed to import bank item '{bankItemData?.id ?? "unknown"}': {ex.Message}");
 						}
 					}
-					catch (System.Exception ex)
-					{
-						Msg.SayRaw($"NG+: Failed to import bank item '{bankItemData?.id ?? "unknown"}': {ex.Message}");
-					}
 				}
+			}
+		}
+
+		// Shipping and delivery chest settings ride independently of includeBank because they're
+		// home-faction logistics, not banking. The includeBank toggle's UI label promises only "money and
+		// items stored in the bank" - silently dropping shipping filter/sort under that toggle would surprise
+		// the user. Settings are also tiny so there's no item-cost reason to gate them.
+		if (EClass.game?.cards != null)
+		{
+			Card shippingContainer = (Card)EClass.game.cards.container_shipping;
+			if (shippingContainer != null && shippingContainer.IsContainer && dumpData.shippingSettings != null)
+			{
+				ThingUtils.ApplyContainerSettings(
+					shippingContainer,
+					dumpData.shippingSettings.mapStr,
+					dumpData.shippingSettings.containerUpgradeCap,
+					dumpData.shippingSettings.containerUpgradeCool,
+					dumpData.shippingSettings.windowSaveDataJson);
+			}
+
+			Card deliverContainer = (Card)EClass.game.cards.container_deliver;
+			if (deliverContainer != null && deliverContainer.IsContainer && dumpData.deliverSettings != null)
+			{
+				ThingUtils.ApplyContainerSettings(
+					deliverContainer,
+					dumpData.deliverSettings.mapStr,
+					dumpData.deliverSettings.containerUpgradeCap,
+					dumpData.deliverSettings.containerUpgradeCool,
+					dumpData.deliverSettings.windowSaveDataJson);
 			}
 		}
 
@@ -690,6 +735,19 @@ public static class CharacterImporter
 			if (toolbeltContainer != null)
 			{
 				toolbeltContainer.things.DestroyAll((Func<Thing, bool>)null);
+
+				// Apply previously-exported toolbelt settings (custom name, window prefs) to the existing toolbelt
+				// container. The toolbelt is a singleton - it isn't re-spawned, so settings must be poked into the
+				// already-existing card here.
+				if (dumpData.toolbeltSettings != null)
+				{
+					ThingUtils.ApplyContainerSettings(
+						toolbeltContainer,
+						dumpData.toolbeltSettings.mapStr,
+						dumpData.toolbeltSettings.containerUpgradeCap,
+						dumpData.toolbeltSettings.containerUpgradeCool,
+						dumpData.toolbeltSettings.windowSaveDataJson);
+				}
 			}
 		}
 

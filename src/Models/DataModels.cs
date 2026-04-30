@@ -27,7 +27,20 @@ public class ThingData
 	[DataMember] public int? slotIndex { get; set; }  // For multi-slot items (rings, hands) - distinguishes which slot
 	[DataMember] public int[] ints { get; set; }  // Full _ints array (contains type, use count, and other item-specific data)
 	[DataMember] public Dictionary<int, int> mapInt { get; set; }  // mapInt dictionary (contains c_dyeMat[3], c_charges[7], c_ammo[27], etc.)
+	[DataMember] public Dictionary<int, string> mapStr { get; set; }  // mapStr dictionary (c_altName=1, c_extraNameRef=12, c_idTalk, c_idDeity, etc.)
 	[DataMember] public List<int> sockets { get; set; }  // Ranged weapon mod sockets: count = list length; 0 = empty, else elementId*1000+encLv
+	[DataMember] public int? containerUpgradeCap { get; set; }  // mapObj[12].cap - storage wrench capacity bonus on Magic Chests
+	[DataMember] public int? containerUpgradeCool { get; set; }  // mapObj[12].cool - fridge wrench cooling flag
+	[DataMember] public string windowSaveDataJson { get; set; }  // mapObj[2] - per-container UI prefs (filter, cats, sortMode, autodump, sharedType) round-tripped via Newtonsoft
+}
+
+[DataContract]
+public class ContainerSettingsData
+{
+	[DataMember] public Dictionary<int, string> mapStr { get; set; }
+	[DataMember] public int? containerUpgradeCap { get; set; }
+	[DataMember] public int? containerUpgradeCool { get; set; }
+	[DataMember] public string windowSaveDataJson { get; set; }
 }
 
 [DataContract]
@@ -151,4 +164,8 @@ public class CharacterDumpData
 	[DataMember] public List<ContainerItemData> containerContents { get; set; }
 	[DataMember] public List<ThingData> bankItems { get; set; }  // Items in bank container (including money & items)
 	[DataMember] public CharaGenesData charaGenes { get; set; }
+	[DataMember] public ContainerSettingsData toolbeltSettings { get; set; }  // Toolbelt container's mapStr/mapObj (toolbelt isn't in wornEquipment, so settings need their own slot)
+	[DataMember] public ContainerSettingsData bankSettings { get; set; }      // Bank (deposit) container's mapStr/mapObj (bank is also a singleton; only its contents went through the existing path)
+	[DataMember] public ContainerSettingsData shippingSettings { get; set; }  // Shipping chest (CardManager.container_shipping) singleton settings
+	[DataMember] public ContainerSettingsData deliverSettings { get; set; }   // Delivery chest (CardManager.container_deliver) singleton settings
 }
