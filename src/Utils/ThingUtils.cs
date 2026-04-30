@@ -62,6 +62,16 @@ public static class ThingUtils
 			socketsList = new List<int>(cardThing.sockets);
 		}
 
+		// Export mapStr passthrough (c_altName, c_extraNameRef, c_idTalk, etc.)
+		Dictionary<int, string> mapStrDict = null;
+		if (cardThing.mapStr != null && cardThing.mapStr.Count > 0)
+		{
+			mapStrDict = new Dictionary<int, string>(cardThing.mapStr);
+		}
+
+		// Container settings/upgrades from mapObj. Read via TryGetValue to avoid triggering lazy-create on every Thing.
+		var containerCaps = ExtractContainerSettings(cardThing);
+
 		return new ThingData
 		{
 			id = ((Card)thing).id,
@@ -74,8 +84,78 @@ public static class ThingUtils
 			containerUid = containerUid,
 			ints = intsArray,
 			mapInt = mapIntDict,
-			sockets = socketsList
+			mapStr = mapStrDict,
+			sockets = socketsList,
+			containerUpgradeCap = containerCaps.cap,
+			containerUpgradeCool = containerCaps.cool,
+			windowSaveDataJson = containerCaps.windowJson
 		};
+	}
+
+	internal static (int? cap, int? cool, string windowJson) ExtractContainerSettings(Card card)
+	{
+		int? cap = null;
+		int? cool = null;
+		string windowJson = null;
+		if (card?.mapObj != null)
+		{
+			if (card.mapObj.TryGetValue(COBJ.containerUpgrade, out object upgObj) && upgObj is ContainerUpgrade cu)
+			{
+				cap = cu.cap;
+				cool = cu.cool;
+			}
+			if (card.mapObj.TryGetValue(COBJ.windowSaveData, out object wsObj) && wsObj is Window.SaveData ws)
+			{
+				try
+				{
+					windowJson = Newtonsoft.Json.JsonConvert.SerializeObject(ws);
+				}
+				catch (Exception ex)
+				{
+					DebugLogger.DebugLog("ThingUtils.cs:ExtractContainerSettings", "Failed to serialize Window.SaveData", null, new Dictionary<string, object> { { "id", card.id }, { "error", ex.Message } });
+				}
+			}
+		}
+		return (cap, cool, windowJson);
+	}
+
+	internal static void ApplyContainerSettings(Card card, Dictionary<int, string> mapStr, int? upgradeCap, int? upgradeCool, string windowJson)
+	{
+		if (card == null) return;
+
+		if (mapStr != null && mapStr.Count > 0)
+		{
+			if (card.mapStr == null) card.mapStr = new Dictionary<int, string>();
+			foreach (var kvp in mapStr) card.mapStr[kvp.Key] = kvp.Value;
+		}
+
+		if (upgradeCap.HasValue || upgradeCool.HasValue)
+		{
+			if (card.mapObj == null) card.mapObj = new Dictionary<int, object>();
+			ContainerUpgrade cu = new ContainerUpgrade
+			{
+				cap = upgradeCap ?? 0,
+				cool = upgradeCool ?? 0
+			};
+			card.mapObj[COBJ.containerUpgrade] = cu;
+		}
+
+		if (!string.IsNullOrEmpty(windowJson))
+		{
+			try
+			{
+				Window.SaveData ws = Newtonsoft.Json.JsonConvert.DeserializeObject<Window.SaveData>(windowJson);
+				if (ws != null)
+				{
+					if (card.mapObj == null) card.mapObj = new Dictionary<int, object>();
+					card.mapObj[COBJ.windowSaveData] = ws;
+				}
+			}
+			catch (Exception ex)
+			{
+				DebugLogger.DebugLog("ThingUtils.cs:ApplyContainerSettings", "Failed to deserialize Window.SaveData; defaults will apply", null, new Dictionary<string, object> { { "id", card.id }, { "error", ex.Message } });
+			}
+		}
 	}
 
 	/// <summary>
@@ -182,6 +262,18 @@ public static class ThingUtils
 			{
 				card.mapInt[kvp.Key] = kvp.Value;
 			}
+		}
+
+		// Restore mapStr + container settings/upgrades (mapObj). Order matters less than ensuring this happens
+		// before any code path observes the container's c_* properties, which lazy-create defaults.
+		ApplyContainerSettings(card, thingData.mapStr, thingData.containerUpgradeCap, thingData.containerUpgradeCool, thingData.windowSaveDataJson);
+
+		// ThingGen.Create called things.SetOwner(this) before mapInt was restored, caching width/height from a default
+		// c_containerSize. Re-run SetOwner so wrench-extended containers (extend_v / extend_h) pick up the saved grid.
+		// Mirrors the Duplicate-path idiom at disassembly Card.cs:3555-3565.
+		if (card.IsContainer && card.c_containerSize != 0)
+		{
+			card.things.SetOwner(card);
 		}
 
 		// Restore mod sockets for ranged weapons so slot count and embedded attachments are preserved
