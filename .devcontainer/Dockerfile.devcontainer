@@ -18,7 +18,7 @@ RUN apt update && apt install -y libicu-dev \
 	&& apt clean && rm -rf /var/lib/apt/lists/*
 
 USER vscode
-RUN dotnet tool install ilspycmd -g
+RUN dotnet tool install ilspycmd -g --version 9.1.0.7988
 USER root
 	
 COPY .devcontainer/post-*.sh /var/
