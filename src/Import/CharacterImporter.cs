@@ -6,6 +6,29 @@ namespace NewGamePlus;
 
 public static class CharacterImporter
 {
+	/// <summary>
+	/// Runs a named import phase under a try/catch envelope. A throw inside one phase
+	/// gets logged with a stack trace and downstream phases continue. Without this, any
+	/// exception in the procedural import would torch the rest of the chain (and the
+	/// dump file deletion / party-member import that follows it).
+	/// </summary>
+	private static void Phase(string scope, string name, System.Action work)
+	{
+		try
+		{
+			work();
+		}
+		catch (System.Exception ex)
+		{
+			DebugLogger.DebugLog(scope, $"phase: {name} threw", null, new Dictionary<string, object>
+			{
+				{ "exception", ex.GetType().Name },
+				{ "message", ex.Message },
+				{ "stackTrace", ex.StackTrace ?? "" }
+			});
+		}
+	}
+
 	public static void ImportBio(Chara c, string dumpFilePath)
 	{
 		CharacterDumpData dumpData = DumpSerializer.LoadDumpData(dumpFilePath);
@@ -356,52 +379,47 @@ public static class CharacterImporter
 			}
 		}
 
-		ImportThingConfig(dumpData, c);
+		Phase("CharacterImporter.ImportStat", "things", () => ImportThingConfig(dumpData, c));
 
-		// Import corruption and corruption history (must be before mutations)
-		if (dumpData.c_corruptionHistory != null && dumpData.c_corruptionHistory.Count > 0)
+		Phase("CharacterImporter.ImportStat", "corruption", () =>
 		{
-			c.c_corruptionHistory = dumpData.c_corruptionHistory.ToList();
-		}
-		c.corruption = dumpData.corruption;
+			if (dumpData.c_corruptionHistory != null && dumpData.c_corruptionHistory.Count > 0)
+				c.c_corruptionHistory = dumpData.c_corruptionHistory.ToList();
+			c.corruption = dumpData.corruption;
+		});
 
-		if (dumpData.tempElements != null && dumpData.tempElements.Count > 0)
+		Phase("CharacterImporter.ImportStat", "tempElements", () =>
 		{
+			if (dumpData.tempElements == null || dumpData.tempElements.Count == 0) return;
 			if (c.tempElements == null)
 			{
 				c.tempElements = new ElementContainer();
 				c.tempElements.SetParent(c);
 			}
 			foreach (ElementData elementData in dumpData.tempElements)
-			{
 				c.tempElements.SetBase(elementData.id, elementData.vBase, 0);
-			}
-		}
+		});
 
-		// Import faith: goddess and days with god (piety will be recalculated from these)
-		// Note: element 85 (piety) must be imported before this via charaElements above
-		if (ModConfig.GetOption("includePiety")?.Value == true && !string.IsNullOrEmpty(dumpData.charaIdFaith))
+		Phase("CharacterImporter.ImportStat", "faith", () =>
 		{
+			// element 85 (piety) must be imported before this via charaElements above
+			if (ModConfig.GetOption("includePiety")?.Value != true || string.IsNullOrEmpty(dumpData.charaIdFaith)) return;
 			c.idFaith = dumpData.charaIdFaith;
 			((Card)c).c_daysWithGod = dumpData.charaDaysWithGod;
-			// Recalculate faith elements from piety (requires element 306/85 which may or may not be imported)
 			c.RefreshFaithElement();
-		}
+		});
 
-		// Conditions are always cured via HealAll() - never import them for new game plus
-
-		if (dumpData.mutations != null && dumpData.mutations.Count > 0 && ModConfig.GetOption("cureDiseases")?.Value != true)
+		Phase("CharacterImporter.ImportStat", "mutations", () =>
 		{
+			if (dumpData.mutations == null || dumpData.mutations.Count == 0) return;
+			if (ModConfig.GetOption("cureDiseases")?.Value == true) return;
 			foreach (MutationData mutationData in dumpData.mutations)
-			{
-				// Apply mutation via SetFeat
 				c.SetFeat(mutationData.featId, mutationData.value);
-			}
-		}
+		});
 
-		// Restore gene registry (effects are already in charaElements, do NOT call Apply)
-		if (dumpData.charaGenes != null && dumpData.charaGenes.items != null && dumpData.charaGenes.items.Count > 0)
+		Phase("CharacterImporter.ImportStat", "genes", () =>
 		{
+			if (dumpData.charaGenes == null || dumpData.charaGenes.items == null || dumpData.charaGenes.items.Count == 0) return;
 			CharaGenes genes = new CharaGenes();
 			genes.inferior = dumpData.charaGenes.inferior;
 			foreach (GeneData geneData in dumpData.charaGenes.items)
@@ -413,32 +431,37 @@ public static class CharacterImporter
 				genes.items.Add(dna);
 			}
 			c.c_genes = genes;
-		}
+		});
 
-		// Strip race-specific feats and genes that don't belong to the new race
-		StripRaceSpecificTraits(c, dumpData);
-
-		c.CalculateMaxStamina();
-		// Always set HP to max to account for level ups
-		c.hp = c.MaxHP;
-
-		c.Refresh();
-		if (c.IsPC)
+		Phase("CharacterImporter.ImportStat", "stripRaceTraits", () =>
 		{
-			LayerChara.Refresh();
-			WidgetEquip.SetDirty();
-		}
+			string exportedRaceIdForStrip = (dumpData.cardIdRace != null && dumpData.cardIdRace.Count > 0) ? dumpData.cardIdRace[0] : null;
+			StripRaceSpecificTraits(c, exportedRaceIdForStrip);
+		});
 
-		if (ModConfig.GetOption("cureDiseases")?.Value == true)
+		Phase("CharacterImporter.ImportStat", "finalize-stats", () =>
 		{
+			c.CalculateMaxStamina();
+			c.hp = c.MaxHP;
+			c.Refresh();
+			if (c.IsPC)
+			{
+				LayerChara.Refresh();
+				WidgetEquip.SetDirty();
+			}
+		});
+
+		Phase("CharacterImporter.ImportStat", "cureDiseases", () =>
+		{
+			if (ModConfig.GetOption("cureDiseases")?.Value != true) return;
 			c.ModCorruption(-100000);
-			// Clear temp modifier debuffs from ether disease (Temporary Weakness etc.)
 			// CureTempElements only reduces negative temp elements; does not touch corruption/disease state
 			c.CureTempElements(100, body: true, mind: true);
-		}
+		});
 
-		if (ModConfig.GetOption("cureMutations")?.Value == true)
+		Phase("CharacterImporter.ImportStat", "cureMutations", () =>
 		{
+			if (ModConfig.GetOption("cureMutations")?.Value != true) return;
 			bool skillsExcluded = ModConfig.GetOption("includeSkills")?.Value != true;
 			bool attributesExcluded = ModConfig.GetOption("includeAttributes")?.Value != true;
 
@@ -494,13 +517,17 @@ public static class CharacterImporter
 					}
 				}
 			}
-		}
+		});
 
-		// Use CureType.Heal - cures conditions/buffs/debuffs, does not clear tempElements
-		c.Cure(CureType.Heal, 100);
-		c.hp = c.MaxHP;
-		c.mana.value = c.mana.max / 2;
-		c.stamina.value = c.stamina.max / 2;
+		Phase("CharacterImporter.ImportStat", "cureHeal", () =>
+		{
+			// Cures conditions/buffs/debuffs; does not clear tempElements
+			c.Cure(CureType.Heal, 100);
+			c.hp = c.MaxHP;
+			c.mana.value = c.mana.max / 2;
+			c.stamina.value = c.stamina.max / 2;
+		});
+
 	}
 
 	/// <summary>
@@ -519,7 +546,7 @@ public static class CharacterImporter
 	/// the new character's race/job elementMap feats don't overlap with purchased feats in the dump -
 	/// an acceptable trade-off for a degraded data situation.
 	/// </summary>
-	private static void ImportElementConfig(Chara c, List<ElementData> elements, string exportedRaceId, string exportedJobId)
+	internal static void ImportElementConfig(Chara c, List<ElementData> elements, string exportedRaceId, string exportedJobId)
 	{
 		if (elements == null || elements.Count == 0)
 		{
@@ -766,7 +793,7 @@ public static class CharacterImporter
 				catch (System.Exception ex)
 				{
 					Msg.SayRaw($"NG+: Failed to import toolbar item '{item?.id ?? "unknown"}' to slot {i}: {ex.Message}");
-					DropAtFeet(c, item);
+					CharaThingsImporter.DropAtFeet(c, item);
 				}
 			}
 		}
@@ -807,7 +834,7 @@ public static class CharacterImporter
 					catch (System.Exception ex)
 					{
 						Msg.SayRaw($"NG+: Failed to import toolbelt item '{dumpData.toolbeltItems[i]?.id ?? "unknown"}': {ex.Message}");
-						DropAtFeet(c, dumpData.toolbeltItems[i]);
+						CharaThingsImporter.DropAtFeet(c, dumpData.toolbeltItems[i]);
 					}
 				}
 			}
@@ -816,53 +843,11 @@ public static class CharacterImporter
 		// 3. Worn equipment (if importIncludeWornEquipment enabled)
 		if (ModConfig.GetOption("includeWornEquipment")?.Value == true && dumpData.wornEquipment != null && dumpData.wornEquipment.Count > 0)
 		{
-			foreach (ThingData thingData in dumpData.wornEquipment)
-			{
-				if (!thingData.slotElementId.HasValue || !thingData.slotIndex.HasValue)
-				{
-					continue;
-				}
-
-				Card spawnedCard = null;
-				try
-				{
-					// Create the item first to check if it's a container and map UIDs
-					spawnedCard = ThingUtils.RestoreThingFromData(thingData);
-					if (spawnedCard == null)
-					{
-						continue;
-					}
-
-					// Equip the item
-					StorageFixed.InsertToEquipment(c, spawnedCard.Thing, thingData.slotElementId.Value, thingData.slotIndex.Value);
-
-					// If this is a container, map old UID to new UID (use exported UID from ThingData)
-					if (spawnedCard.IsContainer && thingData.containerUid.HasValue)
-					{
-						int oldUid = thingData.containerUid.Value;
-						if (spawnedCard._ints != null && spawnedCard._ints.Length > CardIntsIndices.UidOrType)
-						{
-							int newUid = spawnedCard._ints[CardIntsIndices.UidOrType];
-							oldUidToNewUid[oldUid] = newUid;
-						}
-					}
-				}
-				catch (System.Exception)
-				{
-					Msg.SayRaw($"NG+: Failed to equip '{thingData?.id ?? "unknown"}' to slot {thingData?.slotElementId}, placing in inventory.");
-					if (spawnedCard != null)
-					{
-						spawnedCard.c_equippedSlot = 0;
-						c.AddThing(spawnedCard.Thing, tryStack: false);
-						if (((Card)spawnedCard.Thing).parent != c)
-							DropAtFeet(c, spawnedCard);
-					}
-					else
-					{
-						DropAtFeet(c, thingData);
-					}
-				}
-			}
+			System.Action<string, System.Exception> onEquipError = (id, ex) =>
+				Msg.SayRaw($"NG+: Failed to equip '{id ?? "unknown"}', placing in inventory.");
+			Dictionary<int, int> equipUidMap = CharaThingsImporter.Equip(c, dumpData.wornEquipment, onEquipError);
+			foreach (var kv in equipUidMap)
+				oldUidToNewUid[kv.Key] = kv.Value;
 		}
 
 		// 4. Container contents (if importIncludeBackpackContents enabled)
@@ -1110,33 +1095,6 @@ public static class CharacterImporter
 	}
 
 	/// <summary>
-	/// Drops an item at the character's feet when spawn/equip fails (e.g. weak races like Fairy Weak).
-	/// Uses EClass._zone.AddCard; containers get Install() so they render (game uses AddCard().Install() for placed furniture).
-	/// </summary>
-	private static void DropAtFeet(Chara c, Card card)
-	{
-		if (card == null) return;
-		if (EClass._zone == null || c.pos == null || !c.pos.IsValid) return;
-		// Clear c_equippedSlot so when picked up, ShouldShowOnGrid returns true and invX gets assigned.
-		card.c_equippedSlot = 0;
-		EClass._zone.AddCard(card, c.pos);
-		if (card.IsContainer)
-			card.Install();
-	}
-
-	private static void DropAtFeet(Chara c, ThingData descriptor)
-	{
-		if (descriptor == null) return;
-		Card card = ThingUtils.RestoreThingFromData(descriptor);
-		if (card == null) return;
-		if (EClass._zone == null || c.pos == null || !c.pos.IsValid) return;
-		card.c_equippedSlot = 0;
-		EClass._zone.AddCard(card, c.pos);
-		if (card.IsContainer)
-			card.Install();
-	}
-
-	/// <summary>
 	/// Strips race-specific feats and genes that belong to the exported race but not the current
 	/// race. Called after gene restore so that genes are present in c.c_genes when we iterate them.
 	///
@@ -1147,10 +1105,9 @@ public static class CharacterImporter
 	///   3. Strip any remaining oldRaceOnlyFeats that are still set on the character.
 	///   4. Clean up ActSlime (6608) which is auto-learned when feat 1274 exists.
 	/// </summary>
-	private static void StripRaceSpecificTraits(Chara c, CharacterDumpData dumpData)
+	internal static void StripRaceSpecificTraits(Chara c, string exportedRaceId)
 	{
 		string currentRaceId = ((Card)c).c_idRace;
-		string exportedRaceId = (dumpData.cardIdRace != null && dumpData.cardIdRace.Count > 0) ? dumpData.cardIdRace[0] : null;
 
 		// No race change, nothing to strip
 		if (string.IsNullOrEmpty(exportedRaceId) || exportedRaceId == currentRaceId)
@@ -1285,7 +1242,7 @@ public static class CharacterImporter
 	/// Imports extra body parts (from Chaos Shape feat, etc.) that were gained beyond the race baseline.
 	/// Compares exported body parts with current race's baseline and adds any extras.
 	/// </summary>
-	private static void ImportBodyParts(Chara c, List<int> exportedBodyParts)
+	internal static void ImportBodyParts(Chara c, List<int> exportedBodyParts)
 	{
 		if (exportedBodyParts == null || exportedBodyParts.Count == 0)
 		{

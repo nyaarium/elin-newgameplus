@@ -115,6 +115,42 @@ public class CharaGenesData
 	[DataMember] public int inferior { get; set; }
 }
 
+/// <summary>
+/// Per-party-member state carried across NG+. Chara source id (`id`) is the template
+/// used by `CharaGen.Create` on import; everything else is overlaid onto the spawned chara
+/// via the shared chara-import helpers in CharacterImporter.
+///
+/// Excludes ride/parasite linkages (stripped on export) and unique-trait charas (filtered).
+/// Marriage state rides in `loveDataJson` as a Newtonsoft round-trip of `Card.c_love`.
+/// </summary>
+[DataContract]
+public class MemberData
+{
+	[DataMember] public string id { get; set; }
+	[DataMember] public int LV { get; set; }
+	[DataMember] public int exp { get; set; }
+	[DataMember] public int feat { get; set; }
+	[DataMember] public string altName { get; set; }
+	[DataMember] public string alias { get; set; }
+	[DataMember] public string idPortrait { get; set; }
+	[DataMember] public string idRace { get; set; }
+	[DataMember] public string idJob { get; set; }
+	[DataMember] public List<int> bioIds { get; set; }
+	[DataMember] public List<ElementData> elements { get; set; }
+	[DataMember] public List<int> bodyParts { get; set; }
+	[DataMember] public int corruption { get; set; }
+	[DataMember] public List<int> c_corruptionHistory { get; set; }
+	[DataMember] public List<ElementData> tempElements { get; set; }
+	[DataMember] public string idFaith { get; set; }
+	[DataMember] public int daysWithGod { get; set; }
+	[DataMember] public List<MutationData> mutations { get; set; }
+	[DataMember] public CharaGenesData genes { get; set; }
+	[DataMember] public List<ThingData> wornEquipment { get; set; }
+	[DataMember] public List<ContainerItemData> containerContents { get; set; }
+	[DataMember] public string loveDataJson { get; set; }
+	[DataMember] public int affinity { get; set; }
+}
+
 [DataContract]
 public class CharacterDumpData
 {
@@ -168,4 +204,5 @@ public class CharacterDumpData
 	[DataMember] public ContainerSettingsData bankSettings { get; set; }      // Bank (deposit) container's mapStr/mapObj (bank is also a singleton; only its contents went through the existing path)
 	[DataMember] public ContainerSettingsData shippingSettings { get; set; }  // Shipping chest (CardManager.container_shipping) singleton settings
 	[DataMember] public ContainerSettingsData deliverSettings { get; set; }   // Delivery chest (CardManager.container_deliver) singleton settings
+	[DataMember] public List<MemberData> partyMembers { get; set; }           // Filtered party members (uniques excluded, ride/parasite stripped)
 }

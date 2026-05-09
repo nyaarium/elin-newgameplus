@@ -52,8 +52,10 @@ public static class ModLocalization
 	public const string InGameOptionsTitle = "InGameOptionsTitle";
 	public const string MainImportSettingsTitle = "MainImportSettingsTitle";
 	public const string SpecialImportSettingsTitle = "SpecialImportSettingsTitle";
+	public const string ExperimentalSettingsTitle = "ExperimentalSettingsTitle";
 	public const string DebugInventorySlots = "DebugInventorySlots";
 	public const string DebugImport = "DebugImport";
+	public const string DebugSpawnEngagementRing = "DebugSpawnEngagementRing";
 	public const string ModTooltip = "ModTooltip";
 
 	private static Dictionary<string, Dictionary<string, Func<Dictionary<string, object>, string>>> strings = new Dictionary<string, Dictionary<string, Func<Dictionary<string, object>, string>>>();
@@ -639,6 +641,43 @@ public static class ModLocalization
 				{ "CN", "将额外身体部位引入身体部位较少的种族（史莱姆、混沌形态等）。" }
 			}
 		},
+		new UIOption
+		{
+			ConfigKey = "includePartyMembers",
+			ConfigSection = "import",
+			DefaultValue = false,
+			Description = "Carry party members across new game.",
+			ToggleId = "importIncludePartyMembersToggle",
+			LabelKey = "ImportIncludePartyMembers",
+			TooltipKey = "ImportIncludePartyMembersTooltip",
+			LabelTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Include Party Members" },
+				{ "JP", "パーティーメンバーを含める" },
+				{ "CN", "包含同伴" }
+			},
+			TooltipTranslations = new Dictionary<string, string>
+			{
+				{ "EN", "Includes characters in your party." },
+				{ "JP", "パーティーのキャラクターを含めます。" },
+				{ "CN", "包含您队伍中的同伴。" }
+			},
+			Warning = new UIWarning
+			{
+				XmlId = "warningPartyMembers",
+				Key = "WarningPartyMembers",
+				Translations = new Dictionary<string, string>
+				{
+					{ "EN", "Experimental. Unique companions may duplicate or misbehave." },
+					{ "JP", "試験的機能。ユニークな仲間が重複または異常動作する可能性があります。" },
+					{ "CN", "实验性功能。独特的同伴可能重复或行为异常。" }
+				},
+				Conditions = new List<WarningCondition>
+				{
+					new WarningCondition { ToggleId = "importIncludePartyMembersToggle", ExpectedChecked = true }
+				}
+			}
+		},
 	};
 
 	public static readonly List<LocalizedString> GeneralStrings = new()
@@ -705,6 +744,16 @@ public static class ModLocalization
 		},
 		new LocalizedString
 		{
+			Key = "ExperimentalSettingsTitle",
+			Translations = new Dictionary<string, string>
+			{
+				{ "EN", "Experimental Settings" },
+				{ "JP", "試験的設定" },
+				{ "CN", "实验性设置" }
+			}
+		},
+		new LocalizedString
+		{
 			Key = "DebugInventorySlots",
 			Translations = new Dictionary<string, string>
 			{
@@ -721,6 +770,16 @@ public static class ModLocalization
 				{ "EN", "Debug Import" },
 				{ "JP", "Debug Import" },
 				{ "CN", "Debug Import" }
+			}
+		},
+		new LocalizedString
+		{
+			Key = "DebugSpawnEngagementRing",
+			Translations = new Dictionary<string, string>
+			{
+				{ "EN", "Debug Spawn Engagement Ring" },
+				{ "JP", "Debug Spawn Engagement Ring" },
+				{ "CN", "Debug Spawn Engagement Ring" }
 			}
 		},
 		new LocalizedString

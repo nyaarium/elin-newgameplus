@@ -18,9 +18,9 @@ internal static class StartNewGame_Patch
 		bool canImport = fileExists && ModConfig.newGameSessionStarted && EClass.pc != null && EClass._zone != null;
 		if (canImport)
 		{
-			NewGamePlus.ImportStat(EClass.pc);
+			NewGamePlus.ImportFull(EClass.pc);
 
-			// Delete dump file and clear flag after successful import to prevent re-importing on subsequent zone loads
+			// Delete dump file and clear flag after import to prevent re-importing on subsequent zone loads
 			try
 			{
 				File.Delete(dumpFilePath);

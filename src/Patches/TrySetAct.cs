@@ -50,6 +50,30 @@ internal static class TrySetAct_Patch
 					canRepeat = () => false
 				};
 				p.TrySetAct(debugImportAct, (Card)null);
+
+				string spawnRingText = ModLocalization.Get(ModLocalization.DebugSpawnEngagementRing);
+
+				Func<bool> spawnRingAction = () =>
+				{
+					Thing ring = ThingGen.Create("ring_engagement");
+					if (ring != null)
+					{
+						EClass.pc.AddThing(ring, tryStack: false);
+						Msg.SayRaw($"NG+: Spawned {ring.Name} into inventory.");
+					}
+					return false;
+				};
+
+				Act spawnRingAct = (Act)new DynamicAct(spawnRingText, spawnRingAction, false)
+				{
+					id = spawnRingText,
+					dist = 1,
+					isHostileAct = false,
+					localAct = true,
+					cursor = ((CursorSystem.Arrow == null) ? null : null),
+					canRepeat = () => false
+				};
+				p.TrySetAct(spawnRingAct, (Card)null);
 			}
 
 			string exportText = ModLocalization.Get(ModLocalization.ExportCurrentSave);

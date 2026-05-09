@@ -54,6 +54,7 @@ public static class UIController
 			SetSectionTitle(builder, "vlayout02", ModLocalization.Get(ModLocalization.InGameOptionsTitle));
 			SetSectionTitle(builder, "vlayout03", ModLocalization.Get(ModLocalization.MainImportSettingsTitle));
 			SetSectionTitle(builder, "vlayoutSpecial", ModLocalization.Get(ModLocalization.SpecialImportSettingsTitle));
+			SetSectionTitle(builder, "vlayoutExperimental", ModLocalization.Get(ModLocalization.ExperimentalSettingsTitle));
 
 			ModLocalization.RegisterUIToggles(builder);
 		};

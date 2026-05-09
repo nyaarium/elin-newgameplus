@@ -84,8 +84,13 @@ public static class DebugImportTester
 		debugDataBefore["equippedCount"] = equippedCountBefore;
 		debugDataBefore["toolbarCount"] = toolbarCountBefore;
 
-		// Perform the import (simulating "wake up" in new game)
-		CharacterImporter.ImportStat(c, NewGamePlus.GetDumpFilePath());
+		// Run the full import chain (PC + party members) so this button exercises the same
+		// path as a real NG+ start. NewGamePlus.ImportFull is the shared entry point.
+		int partyBeforeCount = EClass.pc?.party?.members?.Count ?? 0;
+		NewGamePlus.ImportFull(c);
+		int partyAfterCount = EClass.pc?.party?.members?.Count ?? 0;
+		debugDataBefore["partyMemberCount"] = partyBeforeCount;
+		debugDataBefore["partyMembersAfter"] = partyAfterCount;
 
 		// Capture state AFTER import
 		var debugDataAfter = new Dictionary<string, object>();
@@ -206,6 +211,7 @@ public static class DebugImportTester
 		message.AppendLine($"Mutations: {mutationCountBefore} -> {mutationCountAfter}");
 		message.AppendLine($"Conditions: {debugDataBefore["conditionCount"]} -> {debugDataAfter["conditionCount"]}");
 		message.AppendLine($"Equipment: {equippedCountBefore} -> {equippedCountAfter} | Toolbar: {toolbarCountBefore} -> {toolbarCountAfter}");
+		message.AppendLine($"Party: {partyBeforeCount} -> {partyAfterCount}");
 		if (differences.Count > 0)
 		{
 			message.AppendLine("\n=== Stat Changes ===");

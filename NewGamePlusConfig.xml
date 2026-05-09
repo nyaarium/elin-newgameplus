@@ -70,36 +70,46 @@
                     <tooltip>ImportIncludeCodexTooltip</tooltip>
                 </toggle>
             </vlayout>
-            <vlayout id="vlayoutSpecial" border="true">
-                <title>SpecialImportSettingsTitle</title>
-                <toggle id="importCureDiseasesToggle">
-                    <contentId>ImportCureDiseases</contentId>
-                    <tooltip>ImportCureDiseasesTooltip</tooltip>
-                </toggle>
-                <toggle id="importCureMutationsToggle">
-                    <contentId>ImportCureMutations</contentId>
-                    <tooltip>ImportCureMutationsTooltip</tooltip>
-                </toggle>
-                <toggle id="importIncludeBodyPartsToggle">
-                    <contentId>ImportIncludeBodyParts</contentId>
-                    <tooltip>ImportIncludeBodyPartsTooltip</tooltip>
-                </toggle>
-                <toggle id="importIncludeLuckyCoinToggle">
-                    <contentId>ImportIncludeLuckyCoin</contentId>
-                    <tooltip>ImportIncludeLuckyCoinTooltip</tooltip>
-                </toggle>
-                <toggle id="importIncludeLittleSisterToggle">
-                    <contentId>ImportIncludeLittleSister</contentId>
-                    <tooltip>ImportIncludeLittleSisterTooltip</tooltip>
-                </toggle>
-                <toggle id="importIncludeKumiToggle">
-                    <contentId>ImportIncludeKumi</contentId>
-                    <tooltip>ImportIncludeKumiTooltip</tooltip>
-                </toggle>
-                <toggle id="importIncludeDeepestToggle">
-                    <contentId>ImportIncludeDeepest</contentId>
-                    <tooltip>ImportIncludeDeepestTooltip</tooltip>
-                </toggle>
+            <vlayout id="rightColumn">
+                <vlayout id="vlayoutSpecial" border="true">
+                    <title>SpecialImportSettingsTitle</title>
+                    <toggle id="importCureDiseasesToggle">
+                        <contentId>ImportCureDiseases</contentId>
+                        <tooltip>ImportCureDiseasesTooltip</tooltip>
+                    </toggle>
+                    <toggle id="importCureMutationsToggle">
+                        <contentId>ImportCureMutations</contentId>
+                        <tooltip>ImportCureMutationsTooltip</tooltip>
+                    </toggle>
+                    <toggle id="importIncludeBodyPartsToggle">
+                        <contentId>ImportIncludeBodyParts</contentId>
+                        <tooltip>ImportIncludeBodyPartsTooltip</tooltip>
+                    </toggle>
+                    <toggle id="importIncludeLuckyCoinToggle">
+                        <contentId>ImportIncludeLuckyCoin</contentId>
+                        <tooltip>ImportIncludeLuckyCoinTooltip</tooltip>
+                    </toggle>
+                    <toggle id="importIncludeLittleSisterToggle">
+                        <contentId>ImportIncludeLittleSister</contentId>
+                        <tooltip>ImportIncludeLittleSisterTooltip</tooltip>
+                    </toggle>
+                    <toggle id="importIncludeKumiToggle">
+                        <contentId>ImportIncludeKumi</contentId>
+                        <tooltip>ImportIncludeKumiTooltip</tooltip>
+                    </toggle>
+                    <toggle id="importIncludeDeepestToggle">
+                        <contentId>ImportIncludeDeepest</contentId>
+                        <tooltip>ImportIncludeDeepestTooltip</tooltip>
+                    </toggle>
+                </vlayout>
+                <vlayout id="vlayoutExperimental" border="true">
+                    <title>ExperimentalSettingsTitle</title>
+                    <toggle id="importIncludePartyMembersToggle">
+                        <contentId>ImportIncludePartyMembers</contentId>
+                        <tooltip>ImportIncludePartyMembersTooltip</tooltip>
+                    </toggle>
+                    <text id="warningPartyMembers" color="#c00000">WarningPartyMembers</text>
+                </vlayout>
             </vlayout>
         </hlayout>
 

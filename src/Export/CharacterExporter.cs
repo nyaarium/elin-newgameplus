@@ -337,4 +337,25 @@ public static class CharacterExporter
 		}
 		return mutations;
 	}
+
+	public static CharaGenesData ExportGenes(Chara c)
+	{
+		if (c.c_genes == null || c.c_genes.items == null || c.c_genes.items.Count == 0)
+			return null;
+		CharaGenesData data = new CharaGenesData
+		{
+			inferior = c.c_genes.inferior,
+			items = new List<GeneData>()
+		};
+		foreach (DNA dna in c.c_genes.items)
+		{
+			data.items.Add(new GeneData
+			{
+				id = dna.id,
+				ints = dna.ints != null ? (int[])dna.ints.Clone() : null,
+				vals = dna.vals != null ? new List<int>(dna.vals) : null
+			});
+		}
+		return data;
+	}
 }

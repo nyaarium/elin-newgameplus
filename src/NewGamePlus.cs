@@ -8,7 +8,7 @@ using HarmonyLib;
 namespace NewGamePlus;
 
 [BepInDependency("evilmask.elinplugins.modoptions", BepInEx.BepInDependency.DependencyFlags.SoftDependency)]
-[BepInPlugin("nyaarium.newgameplusplus", "New Game++", "1.3.3")]
+[BepInPlugin("nyaarium.newgameplusplus", "New Game++", "2.0.0")]
 public class NewGamePlus : BaseUnityPlugin
 {
 	private static NewGamePlus instance;
@@ -91,11 +91,12 @@ public class NewGamePlus : BaseUnityPlugin
 			wornEquipment = itemResult.wornEquipment,
 			containerContents = itemResult.containerContents,
 			bankItems = CharacterExporter.ExportBankItems(),
-			charaGenes = ExportGenes(c),
+			charaGenes = CharacterExporter.ExportGenes(c),
 			toolbeltSettings = CharacterExporter.ExportToolbeltSettings(c),
 			bankSettings = CharacterExporter.ExportBankSettings(),
 			shippingSettings = CharacterExporter.ExportShippingSettings(),
-			deliverSettings = CharacterExporter.ExportDeliverSettings()
+			deliverSettings = CharacterExporter.ExportDeliverSettings(),
+			partyMembers = PartyMemberExporter.ExportPartyMembers(c)
 		};
 
 		string dumpFilePath = GetDumpFilePath();
@@ -127,27 +128,6 @@ public class NewGamePlus : BaseUnityPlugin
 			list.Add(new CodexCreatureData { id = kv.Key, ints = (int[])kv.Value._ints.Clone() });
 		}
 		return list;
-	}
-
-	private static CharaGenesData ExportGenes(Chara c)
-	{
-		if (c.c_genes == null || c.c_genes.items == null || c.c_genes.items.Count == 0)
-			return null;
-		var data = new CharaGenesData
-		{
-			inferior = c.c_genes.inferior,
-			items = new List<GeneData>()
-		};
-		foreach (DNA dna in c.c_genes.items)
-		{
-			data.items.Add(new GeneData
-			{
-				id = dna.id,
-				ints = dna.ints != null ? (int[])dna.ints.Clone() : null,
-				vals = dna.vals != null ? new List<int>(dna.vals) : null
-			});
-		}
-		return data;
 	}
 
 	private static Dictionary<string, int> ExportZoneInfluence()
@@ -188,6 +168,44 @@ public class NewGamePlus : BaseUnityPlugin
 	public static void ImportStat(Chara c)
 	{
 		CharacterImporter.ImportStat(c, GetDumpFilePath());
+	}
+
+	/// <summary>
+	/// Runs the full import chain (PC stats + party members) under independent try/catch envelopes
+	/// so a failure in one stage does not abort the next. Used by both the new-game patch postfix
+	/// and the in-game Debug Import button so the two paths exercise identical behavior.
+	/// </summary>
+	public static void ImportFull(Chara pc)
+	{
+		string dumpFilePath = GetDumpFilePath();
+
+		try
+		{
+			CharacterImporter.ImportStat(pc, dumpFilePath);
+		}
+		catch (Exception ex)
+		{
+			DebugLogger.DebugLog("NewGamePlus.ImportFull", "ImportStat threw", null, new Dictionary<string, object>
+			{
+				{ "exception", ex.GetType().Name },
+				{ "message", ex.Message },
+				{ "stackTrace", ex.StackTrace ?? "" }
+			});
+		}
+
+		try
+		{
+			PartyMemberImporter.ImportPartyMembers(dumpFilePath);
+		}
+		catch (Exception ex)
+		{
+			DebugLogger.DebugLog("NewGamePlus.ImportFull", "ImportPartyMembers threw", null, new Dictionary<string, object>
+			{
+				{ "exception", ex.GetType().Name },
+				{ "message", ex.Message },
+				{ "stackTrace", ex.StackTrace ?? "" }
+			});
+		}
 	}
 
 }

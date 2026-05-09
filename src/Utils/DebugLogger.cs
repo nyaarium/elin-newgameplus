@@ -45,7 +45,7 @@ public static class DebugLogger
 		return "\"" + value.ToString().Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 	}
 
-	public static readonly string LogPath = @"\\wsl$\Ubuntu-24.04\home\nyaarium\elin-newgameplus\.cursor\debug.log";
+	public static readonly string LogPath = @"\\wsl$\Ubuntu-24.04\home\nyaarium\projects\elin-newgameplus\.cursor\debug.log";
 
 	public static void DebugLog(string location, string message, string hypothesisId = null, Dictionary<string, object> data = null)
 	{
